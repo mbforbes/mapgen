@@ -13,6 +13,10 @@ Modeling" (3D facades + textures).
 
 ### Layout Modeling
 
+**Interactive Geometric Simulation of 4D Cities** _(Weber et al., 2009)_ [[pdf](http://peterwonka.net/Publications/pdfs/2009.EG.Weber.UrbanSimulation.FinalVersion.pdf)]
+
+Simulation of a 3D city growing over time.
+
 **[Purdue group](https://www.cs.purdue.edu/cgvlab/urban/urban-procedural-modeling.html) w/ several relevant papers**
 
 Some more details are below.
