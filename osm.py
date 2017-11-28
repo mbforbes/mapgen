@@ -17,6 +17,9 @@ def main():
     root = tree.getroot()
 
     # basic stats about top-level children
+    # ---
+    print('\nGeneral\n{}\n'.format('-'*80))
+
     c = Counter(child.tag for child in root)
     # => Counter({'node': 36072, 'way': 3866, 'relation': 51, 'bounds': 1})
 
@@ -54,11 +57,15 @@ def main():
 
     # way(point) investigation
     # ---
+    print('\nWaypoints\n{}\n'.format('-'*80))
 
     # Hmmm... OK, weird. What are nd? Nodes? How many tags do ways have? Let's
     # investigate...
     children = root.getchildren()
     ways = [child for child in children if child.tag == 'way']
+
+    # dispaly example way
+    print('example way:', ways[0].tag, ways[0].attrib)
 
     # first, how many tags do ways have?
     way_tags = Counter()
@@ -77,6 +84,20 @@ def main():
     # => children/tag of waypoint: Counter({0: 19776})
     # phew, at least that's as expected. `tag`s are leaves.
 
+    # Let's check out the tag distribution.
+    way_tag_keys, way_tag_vals = Counter(), Counter()
+    for way in ways:
+        for tag in tags:
+            for k, v in tag.attrib.items():
+                if k == 'k':
+                    way_tag_keys[v] += 1
+                elif k == 'v':
+                    way_tag_vals[v] += 1
+                else:
+                    print('WARNING! Weird tag key "{}" found'.format(k))
+    print('way tag keys:', way_tag_keys)
+    print('way tag vals:', way_tag_vals)
+
     # Now, let's check out nodes.
     way_nd_children = Counter()
     for way in ways:
@@ -87,12 +108,32 @@ def main():
     # => children/nd of waypoint: Counter({0: 39546})
     # phew! also as expected. `nd`s are leaves. Why not call them `node`s...
 
+    # So `nd`s don't have any properties, but I think that they're just
+    # references to the top level list of nodes! At least god I hope so.
+    found, total = 0, 0
+    node_map = {child.attrib['id']: child for child in children if child.tag == 'node'}
+    for way in ways:
+        nds = [child for child in way.getchildren() if child.tag == 'nd']
+        for nd in nds:
+            total += 1
+            nid = nd.attrib['ref']
+            if nid not in node_map:
+                print('WARNING! nd {} not found in node list'.format(nid))
+            else:
+                found += 1
+    print('{}/{} `nd`s found in `node` list'.format(found, total))
+
     # (top-level) node investigation
     # ---
+    print('\nNodes\n{}\n'.format('-'*80))
+
+    nodes = [child for child in children if child.tag == 'node']
+
+    # dispaly example node
+    print('example node:', nodes[0].tag, nodes[0].attrib)
 
     # just to confirm that tags of top-level nodes are all leaves
     node_tag_children = Counter()
-    nodes = [child for child in children if child.tag == 'node']
     for node in nodes:
         # already verified above that tags are the only children of nodes
         tags = node.getchildren()
@@ -102,10 +143,43 @@ def main():
     # => children/tag of node: Counter({0: 5380})
     # phew! As expected. `tag`s of `node`s are leaves.
 
+    # check out the tag distribution over top-level nodes
+    node_tag_keys, node_tag_vals = Counter(), Counter()
+    for node in nodes:
+        tags = node.getchildren()
+        for tag in tags:
+            for k, v in tag.items():
+                if k == 'k':
+                    node_tag_keys[v] += 1
+                elif k =='v':
+                    node_tag_vals[v] += 1
+    # (commenting out for now as they print a lot)
+    # print('node tag keys:', node_tag_keys)
+    # print('node tag vals:', node_tag_vals)
+    # => node tag keys: Counter({'source': 916, 'addr:city': 847,
+    #   'addr:housenumber': 847, 'addr:street': 847, 'addr:postcode': 846,
+    #   'name': 112, 'highway': 93, 'gtfs:stop_id': 91, 'public_transport': 91,
+    #   'ref': 91, 'bus': 54, 'source:addr:id': 51, 'created_by': 50,
+    #   'amenity': 39, 'gtfs:dataset_id': 37, 'crossing': 32,
+    #   'traffic_calming': 31, 'attribution': 19, 'capacity': 19, 'fee': 19,
+    #   'note': 19, 'operator': 19, 'sdot:bike_rack:condition': 19,
+    #   'sdot:bike_rack:facility': 19, 'sdot:bike_rack:id': 19,
+    #   'sdot:bike_rack:type': 19, 'source:license': 19, 'source:url': 19,
+    #   'noexit': 9, 'cuisine': 8, 'ele': 4, 'gnis:feature_id': 4,
+    #   'start_date': 4, 'website': 4, 'wheelchair': 4, ...
+    #
+    # These are mostly metadata that we don't care about. The values are mostly
+    #   addresses and build numbers.
+
+    # relations
+    # ---
+
     # I don't think I'm going to investigate relations just yet, as I don't
     # think I'll be dealing with that level of semantics for a while (if ever).
 
+
     # play around
+    # ---
     code.interact(local=dict(globals(), **locals()))
 
 
