@@ -75,7 +75,10 @@ def render(root: ET.Element, in_path: str):
             'features': [],
         }
         for child in way:
-            # TODO: way visibility check?
+            # Right now only drawing visible ones (may want to incorporate
+            # others for metadata).
+            if 'visible' not in way.attrib or not way.attrib['visible']:
+                continue
             # TODO: figure out how to get features
             if child.tag != 'nd':
                 continue
@@ -285,7 +288,7 @@ def detective(root: ET.Element):
 
 def main():
     # parse XML tree and get root
-    fn = 'data/facing-east.osm'
+    fn = 'data/north-winds.osm'
     tree = ET.parse(fn)
     root = tree.getroot()
 
