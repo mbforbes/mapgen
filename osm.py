@@ -42,12 +42,6 @@ def convert_polys(
     return res
 
 
-def write_svg(fn: str, pixel_polys: List[Tuple[float, float]]):
-    """Writes polys to fn as SVGs in an HTML file."""
-    # TODO
-    pass
-
-
 def render(root: ET.Element, in_path: str):
     """Just renders OSM tree below root to SVG"""
     # could pass most of the immediate below in if desired
@@ -60,16 +54,17 @@ def render(root: ET.Element, in_path: str):
     # settings
     geo_bounds_el = [child for child in root if child.tag == 'bounds'][0]
     geo_bounds = (
-        bounds_el.attrib['minlat'],
-        bounds_el.attrib['minlon'],
-        bounds_el.attrib['maxlat'],
-        bounds_el.attrib['maxlon'],
+        float(geo_bounds_el.attrib['minlat']),
+        float(geo_bounds_el.attrib['minlon']),
+        float(geo_bounds_el.attrib['maxlat']),
+        float(geo_bounds_el.attrib['maxlon']),
     )
     pixel_bounds = (800, 600)
 
     # build node map
-    node_map = {child.attrib['id']: child for child in children if child.tag == 'node'}
-    ways = [child for child in children if child.tag == 'way']
+    node_map = {int(child.attrib['id']): child for child in root if child.tag == 'node'}
+    ways = [child for child in root if child.tag == 'way']
+    print('INFO: Found {} ways'.format(len(ways)))
 
     # extract polys
     geo_meta_polys = []
@@ -80,20 +75,34 @@ def render(root: ET.Element, in_path: str):
             'features': [],
         }
         for child in way:
+            # TODO: way visibility check?
             # TODO: figure out how to get features
             if child.tag != 'nd':
                 continue
-            meta_poly['points'].append(child.attrib['lat'], child.attrib['lon'])
-        meta_polys.append(meta_poly)
+            # look up the node
+            node = node_map[int(child.attrib['ref'])]
+            meta_poly['points'].append((float(node.attrib['lat']), float(node.attrib['lon'])))
+        geo_meta_polys.append(meta_poly)
 
     # get just geo ones for now
-    geo_polys = [meta_poly['points'] for meta_poly in meta_polys]
+    geo_polys = [geo_meta_poly['points'] for geo_meta_poly in geo_meta_polys]
 
     # convert
     pixel_polys = convert_polys(geo_bounds, pixel_bounds, geo_polys)
 
+    # create doc
+    header = '<!DOCTYPE html>\n<html>\n<body>\n\n<svg width="{}" height="{}">\n'.format(*pixel_bounds)
+    poly_els = []
+    for i, poly in enumerate(pixel_polys):
+        points = ' '.join(','.join(str(coord) for coord in point) for point in poly)
+        poly_els.append(
+            '<polygon points="{}" style="fill:lime;stroke:purple;stroke-width:1" />'.format(points)
+        )
+    footer = '\n</svg>\n\n</body>\n</html>'
+
     # write out
-    # TODO: curspot
+    with open(out_path, 'w') as f:
+        f.write('\n'.join([header] + poly_els + [footer]))
 
 
 def detective(root: ET.Element):
@@ -139,7 +148,9 @@ def detective(root: ET.Element):
     # bounds
     # ---
     print('\nBounds\n{}\n'.format('-'*80))
-    bounds = [child for child in root if child.tag == 'bounds'][0]
+    all_bounds = [child for child in root if child.tag == 'bounds']
+    print('bounds:', len(all_bounds))
+    bounds = all_bounds[0]
     print(bounds.tag, bounds.attrib)
 
     # way(point) investigation
@@ -150,6 +161,7 @@ def detective(root: ET.Element):
     # investigate...
     children = root.getchildren()
     ways = [child for child in children if child.tag == 'way']
+    print('ways:', len(ways))
 
     # dispaly example way
     print('example way:', ways[0].tag, ways[0].attrib)
@@ -215,6 +227,7 @@ def detective(root: ET.Element):
     print('\nNodes\n{}\n'.format('-'*80))
 
     nodes = [child for child in children if child.tag == 'node']
+    print('nodes:', len(nodes))
 
     # dispaly example node
     print('example node:', nodes[0].tag, nodes[0].attrib)
@@ -280,7 +293,7 @@ def main():
     # detective(root)
 
     # do some basic renderering
-    render(root)
+    render(root, fn)
 
 
 if __name__ == '__main__':
