@@ -5,17 +5,98 @@ Working with OpenStreetMap XML files.
 # imports
 import code
 from collections import Counter
+import os
 import xml.etree.ElementTree as ET
+from typing import List, Tuple
 
 
 # playing
 
-def main():
-    # parse XML tree and get root
-    fn = 'data/facing-east.osm'
-    tree = ET.parse(fn)
-    root = tree.getroot()
+def convert_polys(
+        geo_bounds: Tuple[float, float, float, float],
+        pixel_bounds: Tuple[int, int],
+        geo_polys: List[List[Tuple[float, float]]]) -> List[List[Tuple[float, float]]]:
+    """Converts polys from geo_bounds to pixel_bounds.
 
+    Arguments:
+        geo_bounds: minlat, minlon, maxlat, maxlon
+        pixel_bounds: width, height
+        geo_polys: list of polygons (point lists) in lat, lon format
+
+    Returns:
+        pixel_polys: list of polygons (point lists) in x, y pixel format
+    """
+    minlat, minlon, maxlat, maxlon = geo_bounds
+    lonrange = maxlon - minlon
+    latrange = maxlat - minlat
+    width, height = pixel_bounds
+
+    res = []
+    for poly in geo_polys:
+        cur = []
+        for lat, lon in poly:
+            x = ((lon - minlon) / lonrange) * width
+            y = ((maxlat - lat) / latrange) * height
+            cur.append((x, y))
+        res.append(cur)
+    return res
+
+
+def write_svg(fn: str, pixel_polys: List[Tuple[float, float]]):
+    """Writes polys to fn as SVGs in an HTML file."""
+    # TODO
+    pass
+
+
+def render(root: ET.Element, in_path: str):
+    """Just renders OSM tree below root to SVG"""
+    # could pass most of the immediate below in if desired
+
+    # file crap
+    title = '.'.join(os.path.basename(in_path).split('.')[:-1])
+    out_fn = title + '.html'
+    out_path = os.path.join(os.path.dirname(in_path), out_fn)
+
+    # settings
+    geo_bounds_el = [child for child in root if child.tag == 'bounds'][0]
+    geo_bounds = (
+        bounds_el.attrib['minlat'],
+        bounds_el.attrib['minlon'],
+        bounds_el.attrib['maxlat'],
+        bounds_el.attrib['maxlon'],
+    )
+    pixel_bounds = (800, 600)
+
+    # build node map
+    node_map = {child.attrib['id']: child for child in children if child.tag == 'node'}
+    ways = [child for child in children if child.tag == 'way']
+
+    # extract polys
+    geo_meta_polys = []
+    for way in ways:
+        # 'points': [(float,float)], 'features': [str] <-- don't know how to get yet
+        meta_poly = {
+            'points': [],
+            'features': [],
+        }
+        for child in way:
+            # TODO: figure out how to get features
+            if child.tag != 'nd':
+                continue
+            meta_poly['points'].append(child.attrib['lat'], child.attrib['lon'])
+        meta_polys.append(meta_poly)
+
+    # get just geo ones for now
+    geo_polys = [meta_poly['points'] for meta_poly in meta_polys]
+
+    # convert
+    pixel_polys = convert_polys(geo_bounds, pixel_bounds, geo_polys)
+
+    # write out
+    # TODO: curspot
+
+
+def detective(root: ET.Element):
     # basic stats about top-level children
     # ---
     print('\nGeneral\n{}\n'.format('-'*80))
@@ -54,6 +135,12 @@ def main():
     # node Counter({'tag': 5380})
     # way Counter({'nd': 39546, 'tag': 19776})
     # relation Counter({'member': 2062, 'tag': 303})
+
+    # bounds
+    # ---
+    print('\nBounds\n{}\n'.format('-'*80))
+    bounds = [child for child in root if child.tag == 'bounds'][0]
+    print(bounds.tag, bounds.attrib)
 
     # way(point) investigation
     # ---
@@ -181,6 +268,19 @@ def main():
     # play around
     # ---
     code.interact(local=dict(globals(), **locals()))
+
+
+def main():
+    # parse XML tree and get root
+    fn = 'data/facing-east.osm'
+    tree = ET.parse(fn)
+    root = tree.getroot()
+
+    # try to figure out the format
+    # detective(root)
+
+    # do some basic renderering
+    render(root)
 
 
 if __name__ == '__main__':
