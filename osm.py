@@ -42,6 +42,27 @@ def convert_polys(
     return res
 
 
+def get_features(tag_el: ET.Element) -> List[str]:
+    """Gets any features that we're considering and returns them."""
+    feature_set = {'building', 'highway', 'water'}
+    if 'k' not in tag_el.attrib:
+        return []
+    key = tag_el.attrib['k']
+    if key in feature_set:
+        return [key]
+    return []
+
+
+def get_color(features: List[str]) -> str:
+    if 'building' in features:
+        return 'brown'
+    if 'highway' in features:
+        return 'yellow'
+    if 'water' in features:
+        return 'blue'
+    return 'lime'
+
+
 def render(root: ET.Element, in_path: str):
     """Just renders OSM tree below root to SVG"""
     # could pass most of the immediate below in if desired
@@ -61,7 +82,7 @@ def render(root: ET.Element, in_path: str):
     )
     pixel_bounds = (800, 600)
 
-    # build node map
+    # build node mapping (from id -> node)
     node_map = {int(child.attrib['id']): child for child in root if child.tag == 'node'}
     ways = [child for child in root if child.tag == 'way']
     print('INFO: Found {} ways'.format(len(ways)))
@@ -74,17 +95,34 @@ def render(root: ET.Element, in_path: str):
             'points': [],
             'features': [],
         }
+        tags, nds = [], []
         for child in way:
-            # Right now only drawing visible ones (may want to incorporate
-            # others for metadata).
-            if 'visible' not in way.attrib or not way.attrib['visible']:
-                continue
-            # TODO: figure out how to get features
-            if child.tag != 'nd':
-                continue
-            # look up the node
-            node = node_map[int(child.attrib['ref'])]
+            if child.tag == 'tag':
+                tags.append(child)
+            elif child.tag == 'nd':
+                nds.append(child)
+            else:
+                print('WARNING: Weird sub-way element found: {}'.format(child.tag))
+
+        for tag in tags:
+            # get any features from a tag
+            meta_poly['features'] += get_features(tag)
+
+        # roads appear to be not closed.
+        if len(nds) >= 2 and nds[0].attrib['ref'] != nds[-1].attrib['ref']:
+            # TODO(mbforbes): Just figured this out: Roads are never closed.
+            # straight ones don't appear to expand into triangles; curved ones
+            # do because svg automatically connects them as a polygon. roads
+            # should be drawn as a line w/ thickness, not a ploygon!
+            pass
+
+        for nd in nds:
+            # look up the node and add to list of points
+            node = node_map[int(nd.attrib['ref'])]
             meta_poly['points'].append((float(node.attrib['lat']), float(node.attrib['lon'])))
+
+
+        # add to our list
         geo_meta_polys.append(meta_poly)
 
     # get just geo ones for now
@@ -93,13 +131,25 @@ def render(root: ET.Element, in_path: str):
     # convert
     pixel_polys = convert_polys(geo_bounds, pixel_bounds, geo_polys)
 
+    # add back in any features
+    pixel_meta_polys = []
+    for i, geo_meta_poly in enumerate(geo_meta_polys):
+        pixel_poly = pixel_polys[i]
+        pixel_meta_polys.append({
+            'points': pixel_poly,
+            'features': geo_meta_poly['features'],
+        })
+
     # create doc
     header = '<!DOCTYPE html>\n<html>\n<body>\n\n<svg width="{}" height="{}">\n'.format(*pixel_bounds)
     poly_els = []
-    for i, poly in enumerate(pixel_polys):
-        points = ' '.join(','.join(str(coord) for coord in point) for point in poly)
+    for i, pixel_meta_poly in enumerate(pixel_meta_polys):
+        points = ' '.join(','.join(str(coord) for coord in point) for point in pixel_meta_poly['points'])
         poly_els.append(
-            '<polygon points="{}" style="fill:lime;stroke:purple;stroke-width:1" />'.format(points)
+            '<polygon points="{}" style="fill:{};stroke:black;stroke-width:1" />'.format(
+                points,
+                get_color(pixel_meta_poly['features'])
+            )
         )
     footer = '\n</svg>\n\n</body>\n</html>'
 
@@ -107,8 +157,10 @@ def render(root: ET.Element, in_path: str):
     with open(out_path, 'w') as f:
         f.write('\n'.join([header] + poly_els + [footer]))
 
+def tag_dist(els: List[ET.Element]) -> Tuple[Counter, Counter]:
+    """Find the distributions of keys and vals """
 
-def detective(root: ET.Element):
+def detective(root: ET.Element) -> None:
     # basic stats about top-level children
     # ---
     print('\nGeneral\n{}\n'.format('-'*80))
@@ -189,6 +241,7 @@ def detective(root: ET.Element):
     # Let's check out the tag distribution.
     way_tag_keys, way_tag_vals = Counter(), Counter()
     for way in ways:
+        tags = [child for child in way if child.tag == 'tag']
         for tag in tags:
             for k, v in tag.attrib.items():
                 if k == 'k':
