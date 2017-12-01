@@ -10,6 +10,21 @@ import xml.etree.ElementTree as ET
 from typing import List, Tuple
 
 
+# TODO: these distinctions worth it?
+
+class MapObj(object):
+    features: List[str]
+
+class Node(MapObj):
+    point: Tuple[float, float]
+
+class Road(MapObj):
+    points: List[Tuple[float, float]]
+
+class Building(MapObj):
+    points: List[Tuple[float, float]]
+
+
 # playing
 
 def convert_polys(
@@ -63,6 +78,39 @@ def get_color(features: List[str]) -> str:
     return 'lime'
 
 
+def get_line_width(features: List[str]) -> int:
+    # NOTE: this doesn't do what we want yet, as all highways are already
+    # yellow!
+    if 'highway' in features:
+        return 5
+    return 1
+
+
+def render_v2(root: ET.Element, in_path: str):
+    # file crap
+    title = '.'.join(os.path.basename(in_path).split('.')[:-1])
+    out_fn = title + '.html'
+    out_path = os.path.join(os.path.dirname(in_path), out_fn)
+
+    # settings
+    geo_bounds_el = [child for child in root if child.tag == 'bounds'][0]
+    geo_bounds = (
+        float(geo_bounds_el.attrib['minlat']),
+        float(geo_bounds_el.attrib['minlon']),
+        float(geo_bounds_el.attrib['maxlat']),
+        float(geo_bounds_el.attrib['maxlon']),
+    )
+    pixel_bounds = (800, 600)
+
+    # build node mapping (from id -> node)
+    node_map = {int(child.attrib['id']): child for child in root if child.tag == 'node'}
+    ways = [child for child in root if child.tag == 'way']
+    print('INFO: Found {} ways'.format(len(ways)))
+
+    # extract stuff
+    # TODO: keep going
+
+
 def render(root: ET.Element, in_path: str):
     """Just renders OSM tree below root to SVG"""
     # could pass most of the immediate below in if desired
@@ -89,6 +137,7 @@ def render(root: ET.Element, in_path: str):
 
     # extract polys
     geo_meta_polys = []
+    geo_meta_roads = []
     for way in ways:
         # 'points': [(float,float)], 'features': [str] <-- don't know how to get yet
         meta_poly = {
@@ -108,28 +157,29 @@ def render(root: ET.Element, in_path: str):
             # get any features from a tag
             meta_poly['features'] += get_features(tag)
 
+        objtype = "obj"
         # roads appear to be not closed.
         if len(nds) >= 2 and nds[0].attrib['ref'] != nds[-1].attrib['ref']:
-            # TODO(mbforbes): Just figured this out: Roads are never closed.
-            # straight ones don't appear to expand into triangles; curved ones
-            # do because svg automatically connects them as a polygon. roads
-            # should be drawn as a line w/ thickness, not a ploygon!
-            pass
+            objtype = "road"
 
         for nd in nds:
             # look up the node and add to list of points
             node = node_map[int(nd.attrib['ref'])]
             meta_poly['points'].append((float(node.attrib['lat']), float(node.attrib['lon'])))
 
-
-        # add to our list
-        geo_meta_polys.append(meta_poly)
+        # add to the relevant list
+        if objtype == "obj":
+            geo_meta_polys.append(meta_poly)
+        elif objtype == "road":
+            geo_meta_roads.append(meta_poly)
 
     # get just geo ones for now
     geo_polys = [geo_meta_poly['points'] for geo_meta_poly in geo_meta_polys]
+    geo_roads = [geo_meta_road['points'] for geo_meta_road in geo_meta_roads]
 
     # convert
     pixel_polys = convert_polys(geo_bounds, pixel_bounds, geo_polys)
+    pixel_roads = convert_polys(geo_bounds, pixel_bounds, geo_roads)
 
     # add back in any features
     pixel_meta_polys = []
@@ -139,23 +189,40 @@ def render(root: ET.Element, in_path: str):
             'points': pixel_poly,
             'features': geo_meta_poly['features'],
         })
+    pixel_meta_roads = []
+    for i, geo_meta_road in enumerate(geo_meta_roads):
+        pixel_road = pixel_roads[i]
+        pixel_meta_roads.append({
+            'points': pixel_road,
+            'features': geo_meta_road['features'],
+        })
+
 
     # create doc
     header = '<!DOCTYPE html>\n<html>\n<body>\n\n<svg width="{}" height="{}">\n'.format(*pixel_bounds)
-    poly_els = []
+    inner_els = []
     for i, pixel_meta_poly in enumerate(pixel_meta_polys):
         points = ' '.join(','.join(str(coord) for coord in point) for point in pixel_meta_poly['points'])
-        poly_els.append(
+        inner_els.append(
             '<polygon points="{}" style="fill:{};stroke:black;stroke-width:1" />'.format(
                 points,
                 get_color(pixel_meta_poly['features'])
+            )
+        )
+    for i, pixel_meta_road in enumerate(pixel_meta_roads):
+        points = ' '.join(','.join(str(coord) for coord in point) for point in pixel_meta_road['points'])
+        inner_els.append(
+            '<polyline points="{}" style="fill:none;stroke:{};stroke-width:{}" />'.format(
+                points,
+                get_color(pixel_meta_road['features']),
+                get_line_width(pixel_meta_road['features']),
             )
         )
     footer = '\n</svg>\n\n</body>\n</html>'
 
     # write out
     with open(out_path, 'w') as f:
-        f.write('\n'.join([header] + poly_els + [footer]))
+        f.write('\n'.join([header] + inner_els + [footer]))
 
 def tag_dist(els: List[ET.Element]) -> Tuple[Counter, Counter]:
     """Find the distributions of keys and vals """
