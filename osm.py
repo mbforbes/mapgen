@@ -6,6 +6,7 @@ Working with OpenStreetMap XML files.
 import code
 from collections import Counter
 import os
+import random
 import xml.etree.ElementTree as ET
 from typing import List, Tuple
 
@@ -27,6 +28,25 @@ class Building(MapObj):
 
 # playing
 
+def convert_points(
+        geo_bounds: Tuple[float, float, float, float],
+        pixel_bounds: Tuple[int, int],
+        geo_points: List[Tuple[float, float]]) -> List[List[Tuple[float, float]]]:
+    minlat, minlon, maxlat, maxlon = geo_bounds
+    lonrange = maxlon - minlon
+    latrange = maxlat - minlat
+    width, height = pixel_bounds
+
+    res = []
+    for lat, lon in geo_points:
+        x = ((lon - minlon) / lonrange) * width
+        # note that y is different because SVG coordinate system has 0,0 at top
+        # left.
+        y = ((maxlat - lat) / latrange) * height
+        res.append((x, y))
+    return res
+
+
 def convert_polys(
         geo_bounds: Tuple[float, float, float, float],
         pixel_bounds: Tuple[int, int],
@@ -41,20 +61,7 @@ def convert_polys(
     Returns:
         pixel_polys: list of polygons (point lists) in x, y pixel format
     """
-    minlat, minlon, maxlat, maxlon = geo_bounds
-    lonrange = maxlon - minlon
-    latrange = maxlat - minlat
-    width, height = pixel_bounds
-
-    res = []
-    for poly in geo_polys:
-        cur = []
-        for lat, lon in poly:
-            x = ((lon - minlon) / lonrange) * width
-            y = ((maxlat - lat) / latrange) * height
-            cur.append((x, y))
-        res.append(cur)
-    return res
+    return [convert_points(geo_bounds, pixel_bounds, poly) for poly in geo_polys]
 
 
 def get_features(tag_el: ET.Element) -> List[str]:
@@ -138,6 +145,7 @@ def render(root: ET.Element, in_path: str):
     # extract polys
     geo_meta_polys = []
     geo_meta_roads = []
+    geo_road_points = []
     for way in ways:
         # 'points': [(float,float)], 'features': [str] <-- don't know how to get yet
         meta_poly = {
@@ -172,6 +180,8 @@ def render(root: ET.Element, in_path: str):
             geo_meta_polys.append(meta_poly)
         elif objtype == "road":
             geo_meta_roads.append(meta_poly)
+            for point in meta_poly['points']:
+                geo_road_points.append(point)
 
     # get just geo ones for now
     geo_polys = [geo_meta_poly['points'] for geo_meta_poly in geo_meta_polys]
@@ -180,6 +190,7 @@ def render(root: ET.Element, in_path: str):
     # convert
     pixel_polys = convert_polys(geo_bounds, pixel_bounds, geo_polys)
     pixel_roads = convert_polys(geo_bounds, pixel_bounds, geo_roads)
+    pixel_road_points = convert_points(geo_bounds, pixel_bounds, geo_road_points)
 
     # add back in any features
     pixel_meta_polys = []
@@ -196,7 +207,6 @@ def render(root: ET.Element, in_path: str):
             'points': pixel_road,
             'features': geo_meta_road['features'],
         })
-
 
     # create doc
     header = '<!DOCTYPE html>\n<html>\n<body>\n\n<svg width="{}" height="{}">\n'.format(*pixel_bounds)
@@ -218,14 +228,17 @@ def render(root: ET.Element, in_path: str):
                 get_line_width(pixel_meta_road['features']),
             )
         )
+    for x, y in pixel_road_points:
+        inner_els.append(
+            '<circle cx="{}" cy="{}" r="{}" fill="orange" stroke="black" />'.format(
+                x, y, random.randint(1, 5))
+        )
     footer = '\n</svg>\n\n</body>\n</html>'
 
     # write out
     with open(out_path, 'w') as f:
         f.write('\n'.join([header] + inner_els + [footer]))
 
-def tag_dist(els: List[ET.Element]) -> Tuple[Counter, Counter]:
-    """Find the distributions of keys and vals """
 
 def detective(root: ET.Element) -> None:
     # basic stats about top-level children
