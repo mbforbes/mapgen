@@ -6,6 +6,7 @@ Working with OpenStreetMap XML files.
 import code
 from collections import Counter
 import os
+from math import sqrt
 import random
 import xml.etree.ElementTree as ET
 from typing import List, Tuple
@@ -137,6 +138,14 @@ def render(root: ET.Element, in_path: str):
     )
     pixel_bounds = (800, 600)
 
+    # reporting to have some idea of scale
+    print('Lat range: {:.5f} -- {:.5f} (delta: {:.5f})'.format(
+        geo_bounds[0], geo_bounds[2], abs(geo_bounds[2] - geo_bounds[0])
+    ))
+    print('Lon range: {:.5f} -- {:.5f} (delta: {:.5f})'.format(
+        geo_bounds[1], geo_bounds[3], abs(geo_bounds[3] - geo_bounds[1])
+    ))
+
     # build node mapping (from id -> node)
     node_map = {int(child.attrib['id']): child for child in root if child.tag == 'node'}
     ways = [child for child in root if child.tag == 'way']
@@ -183,6 +192,20 @@ def render(root: ET.Element, in_path: str):
             for point in meta_poly['points']:
                 geo_road_points.append(point)
 
+    # collapse geo road points (test before trying to turn into a graph)
+    thresh = 1e-4
+    toremove = set()
+    for i in range(len(geo_road_points)):
+        for j in range(i+1, len(geo_road_points)):
+            p1 = geo_road_points[i]
+            p2 = geo_road_points[j]
+            l2_diff = sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
+            # could end up with some really bad chaining of small distances and
+            # deleting all intermediate points but probably fine
+            if l2_diff < thresh:
+                toremove.add(j)
+    filtered_geo_road_points = [pt for i, pt in enumerate(geo_road_points) if i not in toremove]
+
     # get just geo ones for now
     geo_polys = [geo_meta_poly['points'] for geo_meta_poly in geo_meta_polys]
     geo_roads = [geo_meta_road['points'] for geo_meta_road in geo_meta_roads]
@@ -190,7 +213,7 @@ def render(root: ET.Element, in_path: str):
     # convert
     pixel_polys = convert_polys(geo_bounds, pixel_bounds, geo_polys)
     pixel_roads = convert_polys(geo_bounds, pixel_bounds, geo_roads)
-    pixel_road_points = convert_points(geo_bounds, pixel_bounds, geo_road_points)
+    pixel_road_points = convert_points(geo_bounds, pixel_bounds, filtered_geo_road_points)
 
     # add back in any features
     pixel_meta_polys = []
@@ -231,7 +254,7 @@ def render(root: ET.Element, in_path: str):
     for x, y in pixel_road_points:
         inner_els.append(
             '<circle cx="{}" cy="{}" r="{}" fill="orange" stroke="black" />'.format(
-                x, y, random.randint(1, 5))
+                x, y, 3)#random.randint(1, 5))
         )
     footer = '\n</svg>\n\n</body>\n</html>'
 
