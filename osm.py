@@ -3,77 +3,61 @@ Working with OpenStreetMap XML files.
 """
 
 # imports
+# ---
+
+# builtin
 import code
 from collections import Counter
 import os
 from math import sqrt
 import random
+from typing import List, Tuple, Set, Dict
 import xml.etree.ElementTree as ET
-from typing import List, Tuple
-
 
 # TODO: these distinctions worth it?
 
-class MapObj(object):
-    features: List[str]
+# local
+import geo
 
-class Node(MapObj):
-    point: Tuple[float, float]
+# class MapObj(object):
+#     features: List[str]
 
-class Road(MapObj):
-    points: List[Tuple[float, float]]
+# class Node(MapObj):
+#     point: Tuple[float, float]
 
-class Building(MapObj):
-    points: List[Tuple[float, float]]
+# class Road(MapObj):
+#     points: List[Tuple[float, float]]
+
+# class Building(MapObj):
+#     points: List[Tuple[float, float]]
 
 
 # playing
 
-def convert_points(
-        geo_bounds: Tuple[float, float, float, float],
-        pixel_bounds: Tuple[int, int],
-        geo_points: List[Tuple[float, float]]) -> List[List[Tuple[float, float]]]:
-    minlat, minlon, maxlat, maxlon = geo_bounds
-    lonrange = maxlon - minlon
-    latrange = maxlat - minlat
-    width, height = pixel_bounds
+def get_way_features(way_el: ET.Element) -> Set[str]:
+    """Gets any features that we're considering and returns them.
 
-    res = []
-    for lat, lon in geo_points:
-        x = ((lon - minlon) / lonrange) * width
-        # note that y is different because SVG coordinate system has 0,0 at top
-        # left.
-        y = ((maxlat - lat) / latrange) * height
-        res.append((x, y))
-    return res
-
-
-def convert_polys(
-        geo_bounds: Tuple[float, float, float, float],
-        pixel_bounds: Tuple[int, int],
-        geo_polys: List[List[Tuple[float, float]]]) -> List[List[Tuple[float, float]]]:
-    """Converts polys from geo_bounds to pixel_bounds.
-
-    Arguments:
-        geo_bounds: minlat, minlon, maxlat, maxlon
-        pixel_bounds: width, height
-        geo_polys: list of polygons (point lists) in lat, lon format
-
-    Returns:
-        pixel_polys: list of polygons (point lists) in x, y pixel format
+    TODO: eventually belongs in OSM
     """
-    return [convert_points(geo_bounds, pixel_bounds, poly) for poly in geo_polys]
+    features = set()
+    for child in way_el:
+        if child.tag == 'tag':
+            features.update(get_tag_features(child))
+    return features
 
 
-def get_features(tag_el: ET.Element) -> List[str]:
-    """Gets any features that we're considering and returns them."""
+def get_tag_features(tag_el: ET.Element) -> Set[str]:
+    """Gets any features that we're considering and returns them.
+
+    TODO: eventually belongs in OSM
+    """
     feature_set = {'building', 'highway', 'water'}
     if 'k' not in tag_el.attrib:
-        return []
+        return set()
     key = tag_el.attrib['k']
     if key in feature_set:
-        return [key]
-    return []
+        return set([key])
+    return set()
 
 
 def get_color(features: List[str]) -> str:
@@ -93,6 +77,17 @@ def get_line_width(features: List[str]) -> int:
         return 5
     return 1
 
+def get_geo_bounds(root: ET.Element) -> Tuple[float, float, float, float]:
+    """
+    Returns minlat, minlon, maxlat, maxlon
+    """
+    geo_bounds_el = [child for child in root if child.tag == 'bounds'][0]
+    return (
+        float(geo_bounds_el.attrib['minlat']),
+        float(geo_bounds_el.attrib['minlon']),
+        float(geo_bounds_el.attrib['maxlat']),
+        float(geo_bounds_el.attrib['maxlon']),
+    )
 
 def render_v2(root: ET.Element, in_path: str):
     # file crap
@@ -101,13 +96,7 @@ def render_v2(root: ET.Element, in_path: str):
     out_path = os.path.join(os.path.dirname(in_path), out_fn)
 
     # settings
-    geo_bounds_el = [child for child in root if child.tag == 'bounds'][0]
-    geo_bounds = (
-        float(geo_bounds_el.attrib['minlat']),
-        float(geo_bounds_el.attrib['minlon']),
-        float(geo_bounds_el.attrib['maxlat']),
-        float(geo_bounds_el.attrib['maxlon']),
-    )
+    geo_bounds = get_geo_bounds(root)
     pixel_bounds = (800, 600)
 
     # build node mapping (from id -> node)
@@ -119,7 +108,9 @@ def render_v2(root: ET.Element, in_path: str):
     # TODO: keep going
 
 
-def render(root: ET.Element, in_path: str):
+def render(
+        in_path: str, node_map: Dict[int, ET.Element], ways: List[ET.Element],
+        geo_bounds: Tuple[float,float,float,float]):
     """Just renders OSM tree below root to SVG"""
     # could pass most of the immediate below in if desired
 
@@ -129,13 +120,6 @@ def render(root: ET.Element, in_path: str):
     out_path = os.path.join(os.path.dirname(in_path), out_fn)
 
     # settings
-    geo_bounds_el = [child for child in root if child.tag == 'bounds'][0]
-    geo_bounds = (
-        float(geo_bounds_el.attrib['minlat']),
-        float(geo_bounds_el.attrib['minlon']),
-        float(geo_bounds_el.attrib['maxlat']),
-        float(geo_bounds_el.attrib['maxlon']),
-    )
     pixel_bounds = (800, 600)
 
     # reporting to have some idea of scale
@@ -147,8 +131,6 @@ def render(root: ET.Element, in_path: str):
     ))
 
     # build node mapping (from id -> node)
-    node_map = {int(child.attrib['id']): child for child in root if child.tag == 'node'}
-    ways = [child for child in root if child.tag == 'way']
     print('INFO: Found {} ways'.format(len(ways)))
 
     # extract polys
@@ -170,9 +152,7 @@ def render(root: ET.Element, in_path: str):
             else:
                 print('WARNING: Weird sub-way element found: {}'.format(child.tag))
 
-        for tag in tags:
-            # get any features from a tag
-            meta_poly['features'] += get_features(tag)
+        meta_poly['features'] = get_way_features(way)
 
         objtype = "obj"
         # roads appear to be not closed.
@@ -211,9 +191,9 @@ def render(root: ET.Element, in_path: str):
     geo_roads = [geo_meta_road['points'] for geo_meta_road in geo_meta_roads]
 
     # convert
-    pixel_polys = convert_polys(geo_bounds, pixel_bounds, geo_polys)
-    pixel_roads = convert_polys(geo_bounds, pixel_bounds, geo_roads)
-    pixel_road_points = convert_points(geo_bounds, pixel_bounds, filtered_geo_road_points)
+    pixel_polys = geo.convert_polys(geo_bounds, pixel_bounds, geo_polys)
+    pixel_roads = geo.convert_polys(geo_bounds, pixel_bounds, geo_roads)
+    pixel_road_points = geo.convert_points(geo_bounds, pixel_bounds, filtered_geo_road_points)
 
     # add back in any features
     pixel_meta_polys = []
@@ -442,17 +422,26 @@ def detective(root: ET.Element) -> None:
     code.interact(local=dict(globals(), **locals()))
 
 
+def preproc(fn: str) -> Tuple[Dict[int, ET.Element], List[ET.Element], Tuple[float,float,float,float]]:
+    tree = ET.parse(fn)
+    root = tree.getroot()
+    node_map = {int(child.attrib['id']): child for child in root if child.tag == 'node'}
+    ways = [child for child in root if child.tag == 'way']
+    geo_bounds = get_geo_bounds(root)
+
+    return node_map, ways, geo_bounds
+
+
 def main():
     # parse XML tree and get root
     fn = 'data/north-winds.osm'
-    tree = ET.parse(fn)
-    root = tree.getroot()
+    node_map, ways, geo_bounds = preproc(fn)
 
     # try to figure out the format
     # detective(root)
 
     # do some basic renderering
-    render(root, fn)
+    render(fn, node_map, ways, geo_bounds)
 
 
 if __name__ == '__main__':
