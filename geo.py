@@ -1,4 +1,19 @@
+# imports
+# ---
+
 from typing import List, Tuple
+
+
+# types
+# ---
+
+Point = Tuple[float, float]
+Line = Tuple[Point, Point]
+Polyline = List[Line]
+
+
+# code
+# ---
 
 def convert_points(
         geo_bounds: Tuple[float, float, float, float],

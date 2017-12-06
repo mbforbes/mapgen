@@ -14,10 +14,12 @@ import random
 from typing import List, Tuple, Set, Dict
 import xml.etree.ElementTree as ET
 
-# TODO: these distinctions worth it?
-
 # local
 import geo
+
+
+# TODO: Make high level format some day so other modules don't have to deal
+# with elements.
 
 # class MapObj(object):
 #     features: List[str]

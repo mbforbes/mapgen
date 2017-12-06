@@ -1,3 +1,6 @@
+# imports
+# ---
+
 # builtins
 import code
 from math import sqrt
@@ -7,8 +10,13 @@ import xml.etree.ElementTree as ET
 
 # local
 import osm
+import geo
+from geo import Point, Line
+import svg
 
 
+# code
+# ---
 
 def backtrack_ref(node_combine: Dict[int, int], query: int) -> int:
     """Traverses a mapping an arbitrary number of steps to lookup the base
@@ -133,9 +141,31 @@ def display(
     # settings
     pixel_bounds = (800, 600)
 
-    # TODO(mbforbes): Curspot:
-    # - draw lines for all edges in graph
-    # - draw points for all nodes in graph
+    # extract points and lines
+    geo_lines = []  # type: List[Line]
+    geo_points = []  # type: List[Point]
+    for node_id, neighbor_ids in graph.items():
+        node = node_map[node_id]
+        geo_points.append((float(node.attrib['lat']), float(node.attrib['lon'])))
+        for neighbor_id in neighbor_ids:
+            neighbor = node_map[neighbor_id]
+            geo_lines.append([
+                (float(node.attrib['lat']), float(node.attrib['lon'])),
+                (float(neighbor.attrib['lat']), float(neighbor.attrib['lon'])),
+            ])
+
+    # convert
+    pixel_lines = geo.convert_polys(geo_bounds, pixel_bounds, geo_lines)
+    pixel_points = geo.convert_points(geo_bounds, pixel_bounds, geo_points)
+
+    # render
+    contents = '\n'.join([
+        svg.header(pixel_bounds), svg.lines(pixel_lines),
+        svg.circles(pixel_points), svg.footer(),
+    ])
+    print('Saving to "{}"'.format(out_path))
+    with open(out_path, 'w') as f:
+        f.write(contents)
 
 
 def main():
