@@ -1,9 +1,11 @@
 """Let's see if we can rasterize a polygon."""
 
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 DiscretePoint = Tuple[int, int]
 DiscretePoly = List[DiscretePoint]
+Point = Tuple[float, float]
+Poly = List[Point]
 Raster = List[List[str]]
 
 
@@ -12,18 +14,21 @@ def display_raster(raster: Raster) -> None:
         print(' '.join(row))
 
 
-def brute_force_raster(poly: DiscretePoly) -> Raster:
+def brute_force_raster(poly: Union[DiscretePoly, Poly], resolution: int) -> Raster:
+    '''
+    All coordinates in `poly` should be in the range [0, resolution).
+    '''
     res = []
-    for y in reversed(range(100)):
+    for y in reversed(range(resolution)):
         row = []
-        for x in range(100):
+        for x in range(resolution):
             inside = point_in_polygon(poly, (x, y))
             row.append('+' if inside else '.')
         res.append(row)
     return res
 
 
-def point_in_polygon(poly: DiscretePoly, point: DiscretePoint) -> bool:
+def point_in_polygon(poly: Union[DiscretePoly, Poly], point: DiscretePoint) -> bool:
     x, y = point
     prev_vertex = poly[-1]
     oddNodes = False
@@ -49,8 +54,8 @@ def main() -> None:
         (100, 50),
         (50, 75),
     ]
-    display_raster(brute_force_raster(triangle))
-    display_raster(brute_force_raster(cmplx))
+    display_raster(brute_force_raster(triangle, 101))
+    display_raster(brute_force_raster(cmplx, 101))
 
 
 if __name__ == '__main__':

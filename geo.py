@@ -8,6 +8,7 @@ from typing import List, Tuple
 # ---
 
 Point = Tuple[float, float]
+Polygon = List[Point]
 Line = Tuple[Point, Point]
 Polyline = List[Line]
 
@@ -15,10 +16,39 @@ Polyline = List[Line]
 # code
 # ---
 
+def convert_poly(geo_poly: Polygon, pixel_bounds: Tuple[int, int]) -> Polygon:
+    """
+    Converts geo_poly from geo (lat, lon) space to pixel (x, y) space, where if
+    px, py = pixel_bounds, the pixel coordinates will range [0, px), [0, py);
+    i.e., pixel_bounds are exclusive so that the resulting image size is
+    exactly pixel_bounds.
+    """
+    # get geo range
+    minlat, minlon, maxlat, maxlon = 90.0, 180.0, -90.0, -180.0
+    for lat, lon in geo_poly:
+        minlat = min(minlat, lat)
+        minlon = min(minlon, lon)
+        maxlat = max(maxlat, lat)
+        maxlon = max(maxlon, lon)
+    geo_bounds = (minlat, minlon, maxlat, maxlon)
+
+    # shift pixel bounds by -1, -1 because the other methods are inclusive
+    px, py = pixel_bounds
+    shifted_pixel_bounds = (px - 1, py - 1)
+
+    # note: scaling both x and y to same amount even though the shape may not
+    # have square bounds. because of this, we learn shapes in a scale-invariant
+    # way, and then pick the bounding boxes separately. we could change this to
+    # respect the lat/lon ratio, but lat & lon do not map to pixels the same
+    # way (this is globe location-dependent).
+    return convert_points(geo_bounds, shifted_pixel_bounds, geo_poly)
+
+
 def convert_points(
         geo_bounds: Tuple[float, float, float, float],
         pixel_bounds: Tuple[int, int],
-        geo_points: List[Tuple[float, float]]) -> List[Tuple[float, float]]:
+        geo_points: List[Tuple[float, float]],
+        flip_y: bool = True) -> List[Tuple[float, float]]:
     minlat, minlon, maxlat, maxlon = geo_bounds
     lonrange = maxlon - minlon
     latrange = maxlat - minlat
@@ -27,9 +57,11 @@ def convert_points(
     res = []
     for lat, lon in geo_points:
         x = ((lon - minlon) / lonrange) * width
-        # note that y is different because SVG coordinate system has 0,0 at top
-        # left.
-        y = ((maxlat - lat) / latrange) * height
+        # we may flip_y because SVG coordinate system has 0,0 at top left.
+        if flip_y:
+            y = ((maxlat - lat) / latrange) * height
+        else:
+            y = ((lat - maxlat) / latrange) * height
         res.append((x, y))
     return res
 

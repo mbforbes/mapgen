@@ -62,6 +62,30 @@ def get_tag_features(tag_el: ET.Element) -> Set[str]:
     return set()
 
 
+def nd_to_geo_coords(
+        node_map: Dict[int, ET.Element],
+        nd: ET.Element) -> Tuple[float, float]:
+    node = node_map[int(nd.attrib['ref'])]
+    return (float(node.attrib['lat']), float(node.attrib['lon']))
+
+
+def way_to_geo_poly(
+        node_map: Dict[int, ET.Element], way: ET.Element,
+        closed: bool = False) -> List[Tuple[float, float]]:
+    """
+    `closed` is whether to duplicate the first point as the last
+
+    Coordinates are in (lat, lon) space.
+    """
+    nds = [el for el in way if el.tag == 'nd']
+
+    # remove the final node if the poly shouldn't be closed and it currently is
+    if (not closed) and len(nds) > 0 and nds[0].attrib['ref'] == nds[-1].attrib['ref']:
+        nds = nds[:-1]
+
+    return [nd_to_geo_coords(node_map, nd) for nd in nds]
+
+
 def get_color(features: List[str]) -> str:
     if 'building' in features:
         return 'brown'
