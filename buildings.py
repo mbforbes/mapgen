@@ -7,9 +7,11 @@ Extracting buildings from map file(s)
 
 # builtins
 import code
+import pickle
 from typing import List, Tuple
 
 # 3rd party
+from PIL import Image
 from tqdm import tqdm
 
 # local
@@ -18,7 +20,15 @@ import osm
 import polygon
 
 
-def main():
+def str_raster_to_bin(raster: List[List[str]]) -> List[Tuple[int,int,int]]:
+    res = []
+    for line in raster:
+        for symbol in line:
+            res.append((0,0,0) if symbol == '+' else (255,255,255))
+    return res
+
+
+def test_build():
     fn = 'data/north-winds.osm'
     res = 100
 
@@ -34,6 +44,23 @@ def main():
     d = polygon.display_raster
     d(rasters[0])
     code.interact(local=dict(globals(), **locals()))
+
+
+def test_render():
+    res = 100
+    fn = 'data/north-winds-building-str-rasters.pkl'
+    with open(fn, 'rb') as f:
+        str_rasters = pickle.load(f)
+
+    for i, r in enumerate(str_rasters):
+        img = Image.new('RGB', (res, res))
+        img.putdata(str_raster_to_bin(r))
+        img.save('data/buildings/nw-{}.png'.format(i))
+
+
+def main():
+    # test_build()
+    test_render()
 
 
 if __name__ == '__main__':
