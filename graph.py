@@ -129,10 +129,32 @@ def build(
     return graph
 
 
+# def bfs(graph: Dict[int, Set[int]], curdepth = 0, maxdepth = 7):
+#     for
+
+
+def find_blocks_dummy(graph: Dict[int, Set[int]]) -> List[List[int]]:
+    # return dummy poly
+    poly = []
+    for i, key in enumerate(graph.keys()):
+        if i > 7:
+            break
+        poly.append(key)
+    poly.append(key)
+    return [poly]
+
+
+def find_blocks(graph: Dict[int, Set[int]]) -> List[List[int]]:
+    for start, neighbors in graph.items():
+        # TODO: curspot
+        pass
+
+
 def display(
         in_path: str, node_map: Dict[int, ET.Element],
         geo_bounds: Tuple[float,float,float,float],
-        graph: Dict[int, Set[int]]):
+        graph: Dict[int, Set[int]],
+        blocks: List[List[int]]):
     # file crap
     title = '.'.join(os.path.basename(in_path).split('.')[:-1])
     out_fn = title + '-graph.html'
@@ -154,14 +176,25 @@ def display(
                 (float(neighbor.attrib['lat']), float(neighbor.attrib['lon'])),
             ])
 
+    geo_blocks = []
+    # turn each node list into geo poly
+    for block in blocks:
+        geo_block = []
+        for node_id in block:
+            node = node_map[node_id]
+            geo_block.append((float(node.attrib['lat']), float(node.attrib['lon'])))
+        geo_blocks.append(geo_block)
+
     # convert
+    pixel_blocks = geo.convert_polys(geo_bounds, pixel_bounds, geo_blocks)
     pixel_lines = geo.convert_polys(geo_bounds, pixel_bounds, geo_lines)
     pixel_points = geo.convert_points(geo_bounds, pixel_bounds, geo_points)
 
     # render
     contents = '\n'.join([
         svg.header(pixel_bounds), svg.lines(pixel_lines),
-        svg.circles(pixel_points), svg.footer(),
+        svg.circles(pixel_points), svg.polygons(pixel_blocks), svg.footer(),
+
     ])
     print('Saving to "{}"'.format(out_path))
     with open(out_path, 'w') as f:
@@ -173,7 +206,8 @@ def main():
     node_map, ways, geo_bounds = osm.preproc(fn)
 
     graph = build(node_map, ways)
-    display(fn, node_map, geo_bounds, graph)
+    blocks = find_blocks(graph)
+    display(fn, node_map, geo_bounds, graph, blocks)
 
 
 if __name__ == '__main__':

@@ -2,10 +2,10 @@
 # ---
 
 # builtins
-from typing import List, Tuple, Set, Dict
+from typing import List, Tuple, Set, Dict, Union
 
 # local
-from geo import Line, Point
+from geo import Point, Line, Polyline, Polygon
 
 
 # code
@@ -20,9 +20,23 @@ def footer() -> str:
     return '\n</svg>\n\n</body>\n</html>'
 
 
-def lines(lines: List[Line], color: str = '#b2df8a', line_width: int = 3) -> str:
+def polygons(polygons: List[Polygon], color: str = '#ef8a62') -> str:
+    els = []
+    for polygon in polygons:
+        points = ' '.join(','.join(str(coord) for coord in point) for point in polygon)
+        els.append(
+            '<polygon points="{}" style="fill:{};stroke:black;stroke-width:1" fill-opacity="0.4"/>'.format(
+                points,
+                color,
+            )
+        )
+    return '\n'.join(els)
+
+
+def lines(lines: Union[List[Polyline], List[Line]], color: str = '#b2df8a', line_width: int = 3) -> str:
     """
-    Note: This would also work for polylines, e.g, List[List[Point]] instead of List[Line]
+    Note: This works for lists of either lines or polylines (i.e., it doesn't
+    care how many points are in the line).
     """
     els = []  # type: List[str]
     for line in lines:

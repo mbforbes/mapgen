@@ -10,7 +10,7 @@ from typing import List, Tuple
 Point = Tuple[float, float]
 Polygon = List[Point]
 Line = Tuple[Point, Point]
-Polyline = List[Line]
+Polyline = List[Point]
 
 
 # code
@@ -47,8 +47,8 @@ def convert_poly(geo_poly: Polygon, pixel_bounds: Tuple[int, int]) -> Polygon:
 def convert_points(
         geo_bounds: Tuple[float, float, float, float],
         pixel_bounds: Tuple[int, int],
-        geo_points: List[Tuple[float, float]],
-        flip_y: bool = True) -> List[Tuple[float, float]]:
+        geo_points: List[Point],
+        flip_y: bool = True) -> List[Point]:
     minlat, minlon, maxlat, maxlon = geo_bounds
     lonrange = maxlon - minlon
     latrange = maxlat - minlat
@@ -69,7 +69,7 @@ def convert_points(
 def convert_polys(
         geo_bounds: Tuple[float, float, float, float],
         pixel_bounds: Tuple[int, int],
-        geo_polys: List[List[Tuple[float, float]]]) -> List[List[Tuple[float, float]]]:
+        geo_polys: List[Polygon]) -> List[Polygon]:
     """Converts polys from geo_bounds to pixel_bounds.
 
     Arguments:
