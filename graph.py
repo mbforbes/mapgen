@@ -5,6 +5,8 @@
 import code
 from math import sqrt
 import os
+from collections import deque
+import pickle
 from typing import Dict, Set, Tuple, List
 import xml.etree.ElementTree as ET
 
@@ -129,11 +131,10 @@ def build(
     return graph
 
 
-# def bfs(graph: Dict[int, Set[int]], curdepth = 0, maxdepth = 7):
-#     for
-
-
 def find_blocks_dummy(graph: Dict[int, Set[int]]) -> List[List[int]]:
+    """
+    Dummy "block finder" just to test visualizing blocks.
+    """
     # return dummy poly
     poly = []
     for i, key in enumerate(graph.keys()):
@@ -144,17 +145,124 @@ def find_blocks_dummy(graph: Dict[int, Set[int]]) -> List[List[int]]:
     return [poly]
 
 
+def strpath(path: List[int]) -> str:
+    return '[{}]'.format(','.join(str(n) for n in path))
+
+
+def can_add_to_shortest(cur: int, curpath: List[int], shortest: Dict[int, List[List[int]]]) -> bool:
+    # if shortest hasn't found cur yet, then yes (because BFS finds shortest
+    # path lens)
+    if cur not in shortest:
+        return True
+
+    assert len(curpath) >= 2, 'algorithm expects paths to be >= 2 in len'
+
+    # if the path is just 2 (i.e., directly from start to this node), but a
+    # different path has already been added, then our graph construction is
+    # weird; that means we have multiple paths from the start to cur. let's not
+    # add it for now.
+    if len(curpath) == 2:
+        return False
+
+    # now, for the interesting case. We want to add only if we've found a new
+    # path to this node that is unique; i.e., the middle nodes (excluding start
+    # and cur) have nothing in common with any other paths.
+    curpath_middle_nodes = set(curpath[1:-1])
+    for existing_path in shortest[cur]:
+        existing_path_middle_nodes = set(existing_path[1:-1])
+        if len(existing_path_middle_nodes.intersection(curpath_middle_nodes)) > 0:
+            return False
+    return True
+
+
+def find_rings_at(graph: Dict[int, Set[int]], start: int, maxdist = 3) -> List[List[int]]:
+    print('Starting at node: {}'.format(start))
+    start_path = [start]  # type: List[int]
+    shortest = {}  # type: Dict[int, List[List[int]]]
+    q = deque([(start, start_path)])
+
+    # first, find sets of unique paths to surrounding nodes
+    while len(q) > 0:
+        cur, curpath = q.popleft()
+        print()
+        print('Considering {} {}'.format(cur, strpath(curpath)))
+        print('Shortest: {}'.format(str(shortest)))
+        if can_add_to_shortest(cur, curpath, shortest):
+            if cur not in shortest:
+                shortest[cur] = []
+            shortest[cur].append(curpath)
+
+        # TODO: we should also stop here depending on shortest, right? either
+        # make sure cur wasn't in shortest, or use the can_add_to_shortest()
+        # test?
+        if len(curpath) < maxdist:
+            for neighbor in graph[cur]:
+                # no backtracking
+                if neighbor not in curpath:
+                    q.append((neighbor, curpath + [neighbor]))
+
+    # now, extract rings as immediate neighbors with > 1 path to them
+    print()
+    print('Final shortest: {}'.format(str(shortest)))
+    rings = []
+    for candidate in shortest.keys():
+        paths = shortest[candidate]
+        print('Paths found for {}: {}'.format(candidate, len(paths)))
+        if len(paths) > 1:
+            # just use first two found
+            p1 = paths[0]
+            p2 = paths[1]
+            rings.append(p1 + list(reversed(p2[1:-1])))
+
+    return rings
+
+
+# def find_rings_at(graph: Dict[int, Set[int]], node: int, maxdist = 2) -> List[List[int]]:
+#     print('Starting at node: {}'.format(node))
+#     start_path = [node]  # type: List[int]
+#     q = deque([(node, start_path)])
+#     rings = []  # type: List[List[int]]
+#     found = {node: start_path}  # type: Dict[int, List[int]]
+#     while len(q) > 0:
+#         cur, curpath = q.popleft()
+#         print('Considering {} {}'.format(cur, strpath(curpath)))
+
+#         code.interact(local=dict(globals(), **locals()))
+#         if cur in found:
+#             foundpath = found[cur]
+#             ring = foundpath + list(reversed(curpath))
+#             rings.append(ring)
+#             print('Found ring:', strpath(ring))
+#         else:
+#             found[cur] = curpath
+
+#         if len(curpath) < maxdist:
+#             for neighbor in graph[cur]:
+#                 if neighbor not in found:
+#                     q.append((neighbor, curpath + [neighbor]))
+
+#     return rings
+
+
+def find_rings(graph: Dict[int, Set[int]]) -> List[List[int]]:
+    # TODO: find all rings
+    # return find_rings_at(graph, list(graph.keys())[100])
+    pass
+
+
 def find_blocks(graph: Dict[int, Set[int]]) -> List[List[int]]:
-    for start, neighbors in graph.items():
-        # TODO: curspot
-        pass
+    # rings = find_rings(graph)
+    # TODO: filter rings
+    # return rings
+    pass
 
 
 def display(
         in_path: str, node_map: Dict[int, ET.Element],
         geo_bounds: Tuple[float,float,float,float],
         graph: Dict[int, Set[int]],
-        blocks: List[List[int]]):
+        blocks: List[List[int]],
+        special_node_ref: int):
     # file crap
     title = '.'.join(os.path.basename(in_path).split('.')[:-1])
     out_fn = title + '-graph.html'
@@ -176,8 +284,8 @@ def display(
                 (float(neighbor.attrib['lat']), float(neighbor.attrib['lon'])),
             ])
 
+    # turn each block (node list) into geo poly
     geo_blocks = []
-    # turn each node list into geo poly
     for block in blocks:
         geo_block = []
         for node_id in block:
@@ -185,15 +293,22 @@ def display(
             geo_block.append((float(node.attrib['lat']), float(node.attrib['lon'])))
         geo_blocks.append(geo_block)
 
+    # extract special point coords
+    special_node = node_map[special_node_ref]
+    geo_special_point = (float(special_node.attrib['lat']), float(special_node.attrib['lon']))
+
     # convert
     pixel_blocks = geo.convert_polys(geo_bounds, pixel_bounds, geo_blocks)
     pixel_lines = geo.convert_polys(geo_bounds, pixel_bounds, geo_lines)
     pixel_points = geo.convert_points(geo_bounds, pixel_bounds, geo_points)
+    pixel_special_point = geo.convert_points(geo_bounds, pixel_bounds, [geo_special_point])[0]
 
     # render
     contents = '\n'.join([
         svg.header(pixel_bounds), svg.lines(pixel_lines),
-        svg.circles(pixel_points), svg.polygons(pixel_blocks), svg.footer(),
+        svg.circles(pixel_points), svg.polygons(pixel_blocks),
+        svg.circles([pixel_special_point], '#feb24c', 5),
+        svg.footer(),
 
     ])
     print('Saving to "{}"'.format(out_path))
@@ -201,13 +316,54 @@ def display(
         f.write(contents)
 
 
-def main():
+def legit():
     fn = 'data/north-winds.osm'
+    graph_cache_fn = 'data/north-winds-graph.pkl'
+
     node_map, ways, geo_bounds = osm.preproc(fn)
 
-    graph = build(node_map, ways)
-    blocks = find_blocks(graph)
-    display(fn, node_map, geo_bounds, graph, blocks)
+    # build and save graph
+    # graph = build(node_map, ways)
+    # with open(graph_cache_fn, 'wb') as f:
+    #     print('Writing graph to "{}"'.format(graph_cache_fn))
+    #     pickle.dump(graph, f)
+
+    # ... or load it
+    with open(graph_cache_fn, 'rb') as f:
+        print('Reading graph from "{}"'.format(graph_cache_fn))
+        graph = pickle.load(f)
+
+    special_node = list(graph.keys())[100]
+
+    blocks = find_rings_at(graph, special_node)
+
+    # debug what was found
+    print('Blocks found: {}'.format(len(blocks)))
+
+    display(fn, node_map, geo_bounds, graph, blocks, special_node)
+
+
+def toy():
+    # 4 ------- 3
+    # |         |
+    # |         |
+    # 2 ------- 1
+    toygraph = {
+        1: set([2, 3]),
+        2: set([1, 4]),
+        3: set([1, 4]),
+        4: set([2, 3]),
+    }
+    print('Rings found: {}'.format(str(find_rings_at(toygraph, 1))))
+
+
+
+def main():
+    # test graph construction and block extraction on actual data
+    legit()
+
+    # toy test for block detection
+    # toy()
 
 
 if __name__ == '__main__':
