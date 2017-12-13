@@ -6,8 +6,9 @@ import code
 from math import sqrt
 import os
 from collections import deque
+import math
 import pickle
-from typing import Dict, Set, Tuple, List
+from typing import Dict, Set, Tuple, List, FrozenSet
 import xml.etree.ElementTree as ET
 
 # 3rd party
@@ -16,7 +17,9 @@ from tqdm import tqdm
 # local
 import osm
 import geo
-from geo import Point, Line
+from geo import Point, Line, Polygon
+import polygon
+from polygon import DiscretePoly
 import svg
 
 
@@ -246,18 +249,97 @@ def find_rings_at(graph: Dict[int, Set[int]], start: int, maxdist = 7) -> List[L
 
 #     return rings
 
+def polygon_contains(bigger: DiscretePoly, smaller: DiscretePoly) -> bool:
+    """Tests whether bigger contains smaller.
 
-def find_rings(graph: Dict[int, Set[int]]) -> List[List[int]]:
-    # TODO: find all rings
-    # return find_rings_at(graph, list(graph.keys())[100])
-    pass
+    NOTE: doing an approximate check here. Checking whether `smaller` is inside
+    `bigger` by checking whether each point of `smaller` is inside `bigger`.
+    This is not exact because spiky polygons could have empty regions that
+    would confuse things. (For those regions, depending on the application,
+    it's actually not clear what the desired result should be.)
+    """
+    for point in smaller:
+        # if point not in bigger and not polygon.point_in_polygon(bigger, point):
+        if not polygon.point_in_polygon(bigger, point):
+            # print('{}  not in bigger'.format(str(point)))
+            return False
+    return True
 
 
-def find_blocks(graph: Dict[int, Set[int]]) -> List[List[int]]:
-    # rings = find_rings(graph)
-    # TODO: filter rings
-    # return rings
-    pass
+def filter_encompassing_blocks(
+        blocks: List[List[int]],
+        pixel_blocks: List[DiscretePoly]) -> Tuple[List[List[int]], List[DiscretePoly]]:
+
+    # check each pair and remove as needed
+    toremove = set()
+    for i in tqdm(range(len(blocks))):
+        bi = pixel_blocks[i]
+        for j in range(i+1, len(blocks)):
+            bj = pixel_blocks[j]
+            if polygon_contains(bi, bj):
+                toremove.add(i)
+            if polygon_contains(bj, bi):
+                toremove.add(j)
+
+    block_res = []
+    pixel_res = []
+    for idx, block in enumerate(blocks):
+        if idx not in toremove:
+            block_res.append(block)
+            pixel_res.append(pixel_blocks[idx])
+
+    print('Encompass filtering: before {}, after {} (removed {})'.format(
+        len(blocks),
+        len(block_res),
+        len(toremove),
+    ))
+    return block_res, pixel_res
+
+
+def find_blocks(
+        graph: Dict[int, Set[int]], node_map: Dict[int, ET.Element],
+        geo_bounds: Tuple[float,float,float,float],
+        pixel_bounds: Tuple[int, int]) -> Tuple[List[List[int]], List[DiscretePoly]]:
+    # find unique rings
+    blocks_map = {}  # type: Dict[FrozenSet[int], List[int]]
+    for n in tqdm(graph.keys()):
+        for ring in find_rings_at(graph, n):
+            if frozenset(ring) not in blocks_map:
+                blocks_map[frozenset(ring)] = ring
+
+    # rasterize blocks and remove ones that emcompass others.
+    blocks = list(blocks_map.values())
+    pixel_blocks = blocks_to_pixel_coords(blocks, node_map, geo_bounds, pixel_bounds)
+
+    return filter_encompassing_blocks(blocks, pixel_blocks)
+
+
+def blocks_to_pixel_coords(
+        blocks: List[List[int]],
+        node_map: Dict[int, ET.Element],
+        geo_bounds: Tuple[float,float,float,float],
+        pixel_bounds: Tuple[int, int]) -> List[DiscretePoly]:
+    # turn each block (node list) into geo poly
+    geo_blocks = []
+    for block in blocks:
+        geo_block = []
+        for node_id in block:
+            node = node_map[node_id]
+            geo_block.append((float(node.attrib['lat']), float(node.attrib['lon'])))
+        geo_blocks.append(geo_block)
+
+    # convert to pixels
+    pixel_blocks_float = geo.convert_polys(geo_bounds, pixel_bounds, geo_blocks)
+
+    # floor everything to hopefully help out with float rounding errors
+    pixel_blocks_int = []
+    for float_polygon in pixel_blocks_float:
+        int_polygon = []
+        for point in float_polygon:
+            int_polygon.append((int(math.floor(point[0])), int(math.floor(point[1]))))
+        pixel_blocks_int.append(int_polygon)
+
+    return pixel_blocks_int
 
 
 def display(
@@ -265,6 +347,7 @@ def display(
         geo_bounds: Tuple[float,float,float,float],
         graph: Dict[int, Set[int]],
         blocks: List[List[int]],
+        pixel_blocks: List[List[int]],
         special_node_ref: int):
     # file crap
     title = '.'.join(os.path.basename(in_path).split('.')[:-1])
@@ -288,29 +371,31 @@ def display(
             ])
 
     # turn each block (node list) into geo poly
-    geo_blocks = []
-    for block in blocks:
-        geo_block = []
-        for node_id in block:
-            node = node_map[node_id]
-            geo_block.append((float(node.attrib['lat']), float(node.attrib['lon'])))
-        geo_blocks.append(geo_block)
+    # geo_blocks = []
+    # for block in blocks:
+    #     geo_block = []
+    #     for node_id in block:
+    #         node = node_map[node_id]
+    #         geo_block.append((float(node.attrib['lat']), float(node.attrib['lon'])))
+    #     geo_blocks.append(geo_block)
 
     # extract special point coords
     special_node = node_map[special_node_ref]
     geo_special_point = (float(special_node.attrib['lat']), float(special_node.attrib['lon']))
 
     # convert
-    pixel_blocks = geo.convert_polys(geo_bounds, pixel_bounds, geo_blocks)
+    # pixel_blocks = geo.convert_polys(geo_bounds, pixel_bounds, geo_blocks)
     pixel_lines = geo.convert_polys(geo_bounds, pixel_bounds, geo_lines)
     pixel_points = geo.convert_points(geo_bounds, pixel_bounds, geo_points)
     pixel_special_point = geo.convert_points(geo_bounds, pixel_bounds, [geo_special_point])[0]
 
     # render
     contents = '\n'.join([
-        svg.header(pixel_bounds), svg.lines(pixel_lines),
-        svg.circles(pixel_points), svg.polygons(pixel_blocks),
-        svg.circles([pixel_special_point], '#feb24c', 5),
+        svg.header(pixel_bounds),
+        # svg.lines(pixel_lines),
+        # svg.circles(pixel_points),
+        svg.polygons(pixel_blocks),
+        # svg.circles([pixel_special_point], '#feb24c', 5),
         svg.footer(),
 
     ])
@@ -337,18 +422,12 @@ def legit():
         graph = pickle.load(f)
 
     special_node = list(graph.keys())[300]
-    blocks_map = {}  # type: Dict[Set[int], List[int]]
-    for n in tqdm(graph.keys()):
-        for ring in find_rings_at(graph, n):
-            if frozenset(ring) not in blocks_map:
-                blocks_map[frozenset(ring)] = ring
-
-    blocks = list(blocks_map.values())
+    blocks, pixel_blocks = find_blocks(graph, node_map, geo_bounds, (800, 600))
 
     # debug what was found
     print('Blocks found: {}'.format(len(blocks)))
 
-    display(fn, node_map, geo_bounds, graph, blocks, special_node)
+    display(fn, node_map, geo_bounds, graph, blocks, pixel_blocks, special_node)
 
 
 def toy():
@@ -365,6 +444,30 @@ def toy():
     print('Rings found: {}'.format(str(find_rings_at(toygraph, 1))))
 
 
+def test_encompass_check():
+    bigger = [
+        (187,27),
+        (183,27),
+        (175,27),
+        (159,27),
+        (153,27),
+        (148,27),
+        (149,108),
+        (183,108),
+        (217,108),
+        (217,27),
+    ]
+    smaller = [
+        (148,27),
+        (153,27),
+        (159,27),
+        (175,27),
+        (183,27),
+        (183,108),
+        (149,108),
+    ]
+
+    print('Bigger contains smaller:', polygon_contains(bigger, smaller))
 
 def main():
     # test graph construction and block extraction on actual data
@@ -372,6 +475,9 @@ def main():
 
     # toy test for block detection
     # toy()
+
+    # test encompassing logic
+    # test_encompass_check()
 
 
 if __name__ == '__main__':

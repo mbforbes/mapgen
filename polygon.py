@@ -28,7 +28,16 @@ def brute_force_raster(poly: Union[DiscretePoly, Poly], resolution: int) -> Rast
     return res
 
 
-def point_in_polygon(poly: Union[DiscretePoly, Poly], point: DiscretePoint) -> bool:
+def point_in_polygon(
+        poly: Union[DiscretePoly, Poly],
+        point: Union[DiscretePoint, Point]) -> bool:
+    """NOTE: not battletested for continuous (floating point) `point`
+    argument."""
+    # optimization -- not great for rasterizing, but spectacularly for
+    # poly-in-poly tests
+    if point in poly:
+        return True
+
     x, y = point
     prev_vertex = poly[-1]
     oddNodes = False
