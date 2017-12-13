@@ -10,6 +10,9 @@ import pickle
 from typing import Dict, Set, Tuple, List
 import xml.etree.ElementTree as ET
 
+# 3rd party
+from tqdm import tqdm
+
 # local
 import osm
 import geo
@@ -175,8 +178,8 @@ def can_add_to_shortest(cur: int, curpath: List[int], shortest: Dict[int, List[L
     return True
 
 
-def find_rings_at(graph: Dict[int, Set[int]], start: int, maxdist = 3) -> List[List[int]]:
-    print('Starting at node: {}'.format(start))
+def find_rings_at(graph: Dict[int, Set[int]], start: int, maxdist = 7) -> List[List[int]]:
+    # print('Starting at node: {}'.format(start))
     start_path = [start]  # type: List[int]
     shortest = {}  # type: Dict[int, List[List[int]]]
     q = deque([(start, start_path)])
@@ -184,9 +187,9 @@ def find_rings_at(graph: Dict[int, Set[int]], start: int, maxdist = 3) -> List[L
     # first, find sets of unique paths to surrounding nodes
     while len(q) > 0:
         cur, curpath = q.popleft()
-        print()
-        print('Considering {} {}'.format(cur, strpath(curpath)))
-        print('Shortest: {}'.format(str(shortest)))
+        # print()
+        # print('Considering {} {}'.format(cur, strpath(curpath)))
+        # print('Shortest: {}'.format(str(shortest)))
         if can_add_to_shortest(cur, curpath, shortest):
             if cur not in shortest:
                 shortest[cur] = []
@@ -202,12 +205,12 @@ def find_rings_at(graph: Dict[int, Set[int]], start: int, maxdist = 3) -> List[L
                     q.append((neighbor, curpath + [neighbor]))
 
     # now, extract rings as immediate neighbors with > 1 path to them
-    print()
-    print('Final shortest: {}'.format(str(shortest)))
+    # print()
+    # print('Final shortest: {}'.format(str(shortest)))
     rings = []
     for candidate in shortest.keys():
         paths = shortest[candidate]
-        print('Paths found for {}: {}'.format(candidate, len(paths)))
+        # print('Paths found for {}: {}'.format(candidate, len(paths)))
         if len(paths) > 1:
             # just use first two found
             p1 = paths[0]
@@ -333,9 +336,14 @@ def legit():
         print('Reading graph from "{}"'.format(graph_cache_fn))
         graph = pickle.load(f)
 
-    special_node = list(graph.keys())[100]
+    special_node = list(graph.keys())[300]
+    blocks_map = {}  # type: Dict[Set[int], List[int]]
+    for n in tqdm(graph.keys()):
+        for ring in find_rings_at(graph, n):
+            if frozenset(ring) not in blocks_map:
+                blocks_map[frozenset(ring)] = ring
 
-    blocks = find_rings_at(graph, special_node)
+    blocks = list(blocks_map.values())
 
     # debug what was found
     print('Blocks found: {}'.format(len(blocks)))
