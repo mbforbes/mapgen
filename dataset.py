@@ -45,9 +45,9 @@ def full_block_pixel_coords(
 
         # convert
         fb = FullPixelBlock()
-        fb.block = geo.convert_points_discrete(geo_range, pixel_bounds, block_geo, False)
+        fb.block = geo.convert_points_discrete(geo_range, pixel_bounds, block_geo)
         fb.buildings = [
-            geo.convert_points_discrete(geo_range, pixel_bounds, b, False) for b in cur_building_geos
+            geo.convert_points_discrete(geo_range, pixel_bounds, b) for b in cur_building_geos
         ]
         fbs.append(fb)
     return fbs

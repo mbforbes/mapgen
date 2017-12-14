@@ -77,7 +77,8 @@ def convert_points(
         if flip_y:
             y = ((maxlat - lat) / latrange) * height
         else:
-            y = abs(((lat - maxlat) / latrange) * height)
+            # note: this option may be broken; abs might have failed to fix.
+            y = ((lat - maxlat) / latrange) * height
         res.append((x, y))
     return res
 

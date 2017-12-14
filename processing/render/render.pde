@@ -39,22 +39,47 @@ void drawBuilding(int[][] building) {
     endShape(CLOSE);
 }
 
+String getOutFilename(String fn, String out_dir) {
+    String[] pieces = split(fn, "/");
+    String basename = pieces[pieces.length - 1];
+    String preExt = split(basename, ".")[0];
+    String middle = "";
+    if (out_dir.charAt(out_dir.length() - 1) != '/') {
+        middle = "/";
+    }
+    return out_dir + middle + preExt + ".png";
+}
+
 // handles a single input file
-void handleFile(String fn, String out_fn) {
-    // TODO: beginDraw(), endDraw(), and clear() may be useful for saving
-    // multiple files.
+void handleFile(String fn, String out_dir) {
+    // draw the full version
+    clear();
+    background(255);
 
     String[] lines = loadStrings(fn);
-    drawBlock(str2vertices(lines[0]));
+    int[][] block = str2vertices(lines[0]);
+    drawBlock(block);
 
     for (int i = 1; i < lines.length; i++) {
         drawBuilding(str2vertices(lines[i]));
     }
 
-    save(out_fn);
+    save(getOutFilename(fn, out_dir));
 }
 
 void draw() {
-    handleFile("/home/max/repos/mapgen/data/fbs/north-winds-0.txt", "temp.png");
+    // settings
+    String out_dir = "/home/max/repos/mapgen/data/renders";
+    String base_name = "/home/max/repos/mapgen/data/fbs/north-winds-";
+    String ext = ".txt";
+    int startInclusive = 0;
+    int endInclusive = 162;
+
+    // process (no pun intended) each
+    for (int i = startInclusive; i <= endInclusive; i++) {
+        handleFile(base_name + str(i) + ext, out_dir);
+    }
+
+    exit();
 }
 
