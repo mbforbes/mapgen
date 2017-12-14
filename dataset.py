@@ -5,6 +5,7 @@ Building "block w/ buildings" dataset.
 # builtins
 import argparse
 import code
+import os
 from typing import Dict, Set, Tuple, List, FrozenSet
 
 # 3rd party
@@ -70,8 +71,23 @@ def match_buildings_blocks(
 
     return res
 
+# remember....
+#
+# DiscretePoly = List[DiscretePoint]
+#
+# class FullPixelBlock:
+#     block: DiscretePoly
+#     buildings: List[DiscretePoly]
+
+
+def poly2str(poly: DiscretePoly) -> str:
+    return ' '.join((','.join((str(coord) for coord in pt)) for pt in poly))
+
 
 def gen_for_file(in_fn: str, out_dir: str, ir_w: int, ir_h: int, res: int) -> None:
+    # get filename info to use as prefix
+    prefix, _ = os.path.basename(in_fn).split('.')
+
     intermediate_resolution = (ir_w, ir_h)
 
     node_map, ways, geo_bounds = osm.preproc(in_fn)
@@ -93,8 +109,13 @@ def gen_for_file(in_fn: str, out_dir: str, ir_w: int, ir_h: int, res: int) -> No
     # get pixel coords per block
     fbs = full_block_pixel_coords(block_map, building_geos, block_geos, (res - 1, res - 1))
 
-    # TODO: render
-    code.interact(local=dict(globals(), **locals()))
+    # write data out so processing can render
+    for i, fb in enumerate(fbs):
+        block = poly2str(fb.block)
+        bs = [poly2str(b) for b in fb.buildings]
+        with open(os.path.join(out_dir, '{}-{}.txt'.format(prefix, str(i))), 'w') as f:
+            f.write('\n'.join([block] + bs))
+            f.write('\n')
 
 
 def main():
