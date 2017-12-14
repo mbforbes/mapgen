@@ -268,7 +268,7 @@ def polygon_contains(bigger: DiscretePoly, smaller: DiscretePoly) -> bool:
 
 def filter_encompassing_blocks(
         blocks: List[List[int]],
-        pixel_blocks: List[DiscretePoly]) -> Tuple[List[List[int]], List[DiscretePoly]]:
+        pixel_blocks: List[DiscretePoly]) -> Set[int]:
 
     # check each pair and remove as needed
     toremove = set()
@@ -281,25 +281,18 @@ def filter_encompassing_blocks(
             if polygon_contains(bj, bi):
                 toremove.add(j)
 
-    block_res = []
-    pixel_res = []
-    for idx, block in enumerate(blocks):
-        if idx not in toremove:
-            block_res.append(block)
-            pixel_res.append(pixel_blocks[idx])
-
-    print('Encompass filtering: before {}, after {} (removed {})'.format(
-        len(blocks),
-        len(block_res),
-        len(toremove),
-    ))
-    return block_res, pixel_res
+    return toremove
 
 
 def find_blocks(
         graph: Dict[int, Set[int]], node_map: Dict[int, ET.Element],
         geo_bounds: Tuple[float,float,float,float],
-        pixel_bounds: Tuple[int, int]) -> Tuple[List[List[int]], List[DiscretePoly]]:
+        pixel_bounds: Tuple[int, int]) -> Tuple[List[Polygon], List[List[int]], List[DiscretePoly]]:
+    """
+    Returns 2-tuple of:
+        - list of blocks in ID format: each block is list of node IDs
+        - list of blocks in polygon format in pixel_bounds space
+    """
     # find unique rings
     blocks_map = {}  # type: Dict[FrozenSet[int], List[int]]
     for n in tqdm(graph.keys()):
@@ -307,44 +300,73 @@ def find_blocks(
             if frozenset(ring) not in blocks_map:
                 blocks_map[frozenset(ring)] = ring
 
-    # rasterize blocks and remove ones that emcompass others.
+    # rasterize blocks
     blocks = list(blocks_map.values())
-    pixel_blocks = blocks_to_pixel_coords(blocks, node_map, geo_bounds, pixel_bounds)
+    geo_blocks, pixel_blocks = ways_to_pixel_coords(blocks, node_map, geo_bounds, pixel_bounds)
 
-    return filter_encompassing_blocks(blocks, pixel_blocks)
+    # find encompassing blocks to remove
+    toremove = filter_encompassing_blocks(blocks, pixel_blocks)
+
+    # print('Encompass filtering: before {}, after {} (removed {})'.format(
+    #     len(blocks),
+    #     len(block_res),
+    #     len(toremove),
+    # ))
+
+    # return blocks that aren't on the to-remove list in all three formats (ref
+    # list, geo poly, pixel poly)
+    geo_res = []
+    block_res = []
+    pixel_res = []
+    for idx in range(len(blocks)):
+        if idx not in toremove:
+            geo_res.append(geo_blocks[idx])
+            block_res.append(blocks[idx])
+            pixel_res.append(pixel_blocks[idx])
+
+    return geo_res, block_res, pixel_res
 
 
-def blocks_to_pixel_coords(
-        blocks: List[List[int]],
-        node_map: Dict[int, ET.Element],
+def geo_ways_to_pixel_coords(
+        geo_ways: List[Polygon],
         geo_bounds: Tuple[float,float,float,float],
         pixel_bounds: Tuple[int, int]) -> List[DiscretePoly]:
-    # turn each block (node list) into geo poly
-    geo_blocks = []
-    for block in blocks:
-        geo_block = []
-        for node_id in block:
-            node = node_map[node_id]
-            geo_block.append((float(node.attrib['lat']), float(node.attrib['lon'])))
-        geo_blocks.append(geo_block)
 
     # convert to pixels
-    pixel_blocks_float = geo.convert_polys(geo_bounds, pixel_bounds, geo_blocks)
+    pixel_ways_float = geo.convert_polys(geo_bounds, pixel_bounds, geo_ways)
 
     # floor everything to hopefully help out with float rounding errors
-    pixel_blocks_int = []
-    for float_polygon in pixel_blocks_float:
+    pixel_ways_int = []
+    for float_polygon in pixel_ways_float:
         int_polygon = []
         for point in float_polygon:
             int_polygon.append((int(math.floor(point[0])), int(math.floor(point[1]))))
-        pixel_blocks_int.append(int_polygon)
+        pixel_ways_int.append(int_polygon)
 
-    return pixel_blocks_int
+    return pixel_ways_int
+
+
+def ways_to_pixel_coords(
+        ways: List[List[int]],
+        node_map: Dict[int, ET.Element],
+        geo_bounds: Tuple[float,float,float,float],
+        pixel_bounds: Tuple[int, int]) -> Tuple[List[Polygon], List[DiscretePoly]]:
+    # turn each way (node list) into geo poly
+    geo_ways = []
+    for way in ways:
+        geo_way = []
+        for node_id in way:
+            node = node_map[node_id]
+            geo_way.append((float(node.attrib['lat']), float(node.attrib['lon'])))
+        geo_ways.append(geo_way)
+
+    return geo_ways, geo_ways_to_pixel_coords(geo_ways, geo_bounds, pixel_bounds)
 
 
 def display(
         in_path: str, node_map: Dict[int, ET.Element],
         geo_bounds: Tuple[float,float,float,float],
+        pixel_bounds: Tuple[int, int],
         graph: Dict[int, Set[int]],
         blocks: List[List[int]],
         pixel_blocks: List[List[int]],
@@ -353,9 +375,6 @@ def display(
     title = '.'.join(os.path.basename(in_path).split('.')[:-1])
     out_fn = title + '-graph.html'
     out_path = os.path.join(os.path.dirname(in_path), out_fn)
-
-    # settings
-    pixel_bounds = (800, 600)
 
     # extract points and lines
     geo_lines = []  # type: List[Line]
@@ -392,8 +411,8 @@ def display(
     # render
     contents = '\n'.join([
         svg.header(pixel_bounds),
-        # svg.lines(pixel_lines),
-        # svg.circles(pixel_points),
+        svg.lines(pixel_lines),
+        svg.circles(pixel_points),
         svg.polygons(pixel_blocks),
         # svg.circles([pixel_special_point], '#feb24c', 5),
         svg.footer(),
@@ -405,8 +424,10 @@ def display(
 
 
 def legit():
-    fn = 'data/north-winds.osm'
-    graph_cache_fn = 'data/north-winds-graph.pkl'
+    intermediate_res_w = 800
+    intermediate_res_h = 600
+    fn = 'data/business-time.osm'
+    graph_cache_fn = 'data/business-time-graph.pkl'
 
     node_map, ways, geo_bounds = osm.preproc(fn)
 
@@ -422,12 +443,17 @@ def legit():
         graph = pickle.load(f)
 
     special_node = list(graph.keys())[300]
-    blocks, pixel_blocks = find_blocks(graph, node_map, geo_bounds, (800, 600))
+    pixel_bounds = (intermediate_res_w, intermediate_res_h)
+    geo_blocks, blocks, pixel_blocks = find_blocks(graph, node_map, geo_bounds, pixel_bounds)
 
     # debug what was found
-    print('Blocks found: {}'.format(len(blocks)))
+    # print('Blocks found: {}'.format(len(blocks)))
 
-    display(fn, node_map, geo_bounds, graph, blocks, pixel_blocks, special_node)
+    # map buildings to blocks
+
+    display(
+        fn, node_map, geo_bounds, pixel_bounds, graph, blocks, pixel_blocks,
+        special_node)
 
 
 def toy():

@@ -69,13 +69,28 @@ def nd_to_geo_coords(
     return (float(node.attrib['lat']), float(node.attrib['lon']))
 
 
-def way_to_geo_poly(
+def transform_ways(
+        node_map: Dict[int, ET.Element], ways: List[ET.Element],
+        closed: bool = False) -> Tuple[List[List[Tuple[float, float]]], List[List[int]]]:
+    geo_coords, ids = [], []
+    for way in ways:
+        g, i = transform_way(node_map, way, closed)
+        geo_coords.append(g)
+        ids.append(i)
+    return geo_coords, ids
+
+
+def transform_way(
         node_map: Dict[int, ET.Element], way: ET.Element,
-        closed: bool = False) -> List[Tuple[float, float]]:
+        closed: bool = False) -> Tuple[List[Tuple[float, float]], List[int]]:
     """
     `closed` is whether to duplicate the first point as the last
 
     Coordinates are in (lat, lon) space.
+
+    Returns 2-tuple of:
+        - list of coords
+        - list of node ref IDs
     """
     nds = [el for el in way if el.tag == 'nd']
 
@@ -83,7 +98,7 @@ def way_to_geo_poly(
     if (not closed) and len(nds) > 0 and nds[0].attrib['ref'] == nds[-1].attrib['ref']:
         nds = nds[:-1]
 
-    return [nd_to_geo_coords(node_map, nd) for nd in nds]
+    return [nd_to_geo_coords(node_map, nd) for nd in nds], [int(nd.attrib['ref']) for nd in nds]
 
 
 def get_color(features: List[str]) -> str:
