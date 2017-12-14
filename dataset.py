@@ -14,7 +14,42 @@ from tqdm import tqdm
 import buildings
 import graph
 import osm
+import geo
+from geo import Polygon
 from polygon import DiscretePoly
+
+
+class FullPixelBlock:
+    block: DiscretePoly
+    buildings: List[DiscretePoly]
+
+
+def full_block_pixel_coords(
+        block_map: Dict[int, List[int]], building_geos: List[Polygon],
+        block_geos: List[Polygon], pixel_bounds: Tuple[int, int]) -> List[FullPixelBlock]:
+    """
+    """
+    fbs = []  # type: List[FullPixelBlock]
+    for block_idx, building_idxes in block_map.items():
+        # don't add blocks that have zero buildings
+        if len(building_idxes) == 0:
+            continue
+
+        # pull out our items
+        block_geo = block_geos[block_idx]
+        cur_building_geos = [building_geos[idx] for idx in building_idxes]
+
+        # get geo range
+        geo_range = geo.get_geo_range(cur_building_geos + [block_geo])
+
+        # convert
+        fb = FullPixelBlock()
+        fb.block = geo.convert_points_discrete(geo_range, pixel_bounds, block_geo, False)
+        fb.buildings = [
+            geo.convert_points_discrete(geo_range, pixel_bounds, b, False) for b in cur_building_geos
+        ]
+        fbs.append(fb)
+    return fbs
 
 
 def match_buildings_blocks(
@@ -54,6 +89,9 @@ def gen_for_file(in_fn: str, out_dir: str, ir_w: int, ir_h: int, res: int) -> No
     # find buildings in blocks
     print('Matching buildings to blocks...')
     block_map = match_buildings_blocks(building_pixels, block_pixels)
+
+    # get pixel coords per block
+    fbs = full_block_pixel_coords(block_map, building_geos, block_geos, (res - 1, res - 1))
 
     # TODO: render
     code.interact(local=dict(globals(), **locals()))

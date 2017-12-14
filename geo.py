@@ -1,6 +1,7 @@
 # imports
 # ---
 
+import math
 from typing import List, Tuple
 
 
@@ -8,6 +9,7 @@ from typing import List, Tuple
 # ---
 
 Point = Tuple[float, float]
+DiscretePoint = Tuple[int, int]
 Polygon = List[Point]
 Line = Tuple[Point, Point]
 Polyline = List[Point]
@@ -16,6 +18,18 @@ Polyline = List[Point]
 # code
 # ---
 
+def get_geo_range(geo_polys: List[Polygon]) -> Tuple[float, float, float, float]:
+    """Returns (minlat, minlon, maxlat, maxlon)"""
+    minlat, minlon, maxlat, maxlon = 90.0, 180.0, -90.0, -180.0
+    for geo_poly in geo_polys:
+        for lat, lon in geo_poly:
+            minlat = min(minlat, lat)
+            minlon = min(minlon, lon)
+            maxlat = max(maxlat, lat)
+            maxlon = max(maxlon, lon)
+    return (minlat, minlon, maxlat, maxlon)
+
+
 def convert_poly(geo_poly: Polygon, pixel_bounds: Tuple[int, int]) -> Polygon:
     """
     Converts geo_poly from geo (lat, lon) space to pixel (x, y) space, where if
@@ -23,14 +37,7 @@ def convert_poly(geo_poly: Polygon, pixel_bounds: Tuple[int, int]) -> Polygon:
     i.e., pixel_bounds are exclusive so that the resulting image size is
     exactly pixel_bounds.
     """
-    # get geo range
-    minlat, minlon, maxlat, maxlon = 90.0, 180.0, -90.0, -180.0
-    for lat, lon in geo_poly:
-        minlat = min(minlat, lat)
-        minlon = min(minlon, lon)
-        maxlat = max(maxlat, lat)
-        maxlon = max(maxlon, lon)
-    geo_bounds = (minlat, minlon, maxlat, maxlon)
+    geo_bounds = get_geo_range([geo_poly])
 
     # shift pixel bounds by -1, -1 because the other methods are inclusive
     px, py = pixel_bounds
@@ -42,6 +49,15 @@ def convert_poly(geo_poly: Polygon, pixel_bounds: Tuple[int, int]) -> Polygon:
     # respect the lat/lon ratio, but lat & lon do not map to pixels the same
     # way (this is globe location-dependent).
     return convert_points(geo_bounds, shifted_pixel_bounds, geo_poly)
+
+
+def convert_points_discrete(
+        geo_bounds: Tuple[float, float, float, float],
+        pixel_bounds: Tuple[int, int],
+        geo_points: List[Point],
+        flip_y: bool = True) -> List[DiscretePoint]:
+    pts = convert_points(geo_bounds, pixel_bounds, geo_points, flip_y)
+    return [(int(math.floor(p[0])), int(math.floor(p[1]))) for p in pts]
 
 
 def convert_points(
@@ -61,7 +77,7 @@ def convert_points(
         if flip_y:
             y = ((maxlat - lat) / latrange) * height
         else:
-            y = ((lat - maxlat) / latrange) * height
+            y = abs(((lat - maxlat) / latrange) * height)
         res.append((x, y))
     return res
 
