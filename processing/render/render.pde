@@ -51,33 +51,38 @@ String getOutFilename(String fn, String out_dir) {
 }
 
 // handles a single input file
-void handleFile(String fn, String out_dir) {
+void handleFile(String fn, String bare_out_dir, String full_out_dir) {
+    String[] lines = loadStrings(fn);
+    int[][] block = str2vertices(lines[0]);
+
+    // draw the bare version
+    clear();
+    background(255);
+    drawBlock(block);
+    save(getOutFilename(fn, bare_out_dir));
+
     // draw the full version
     clear();
     background(255);
-
-    String[] lines = loadStrings(fn);
-    int[][] block = str2vertices(lines[0]);
     drawBlock(block);
-
     for (int i = 1; i < lines.length; i++) {
         drawBuilding(str2vertices(lines[i]));
     }
-
-    save(getOutFilename(fn, out_dir));
+    save(getOutFilename(fn, full_out_dir));
 }
 
 void draw() {
     // settings
-    String out_dir = "/home/max/repos/mapgen/data/renders";
-    String base_name = "/home/max/repos/mapgen/data/fbs/north-winds-";
+    String bare_out_dir = "/home/max/repos/pytorch-CycleGAN-and-pix2pix/datasets/mapgen/A/train/";
+    String full_out_dir = "/home/max/repos/pytorch-CycleGAN-and-pix2pix/datasets/mapgen/B/train/";
+    String base_name = "/home/max/repos/mapgen/data/fbs/westside-";
     String ext = ".txt";
     int startInclusive = 0;
-    int endInclusive = 162;
+    int endInclusive = 176;
 
     // process (no pun intended) each
     for (int i = startInclusive; i <= endInclusive; i++) {
-        handleFile(base_name + str(i) + ext, out_dir);
+        handleFile(base_name + str(i) + ext, bare_out_dir, full_out_dir);
     }
 
     exit();
