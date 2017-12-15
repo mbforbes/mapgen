@@ -32,7 +32,11 @@ def point_in_polygon(
         poly: Union[DiscretePoly, Poly],
         point: Union[DiscretePoint, Point]) -> bool:
     """NOTE: not battletested for continuous (floating point) `point`
-    argument."""
+    argument.
+
+    Algorithm from Darel Rex Finley:
+    http://alienryderflex.com/polygon/
+    """
     # optimization -- not great for rasterizing, but spectacularly for
     # poly-in-poly tests
     if point in poly:

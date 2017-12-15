@@ -223,32 +223,6 @@ def find_rings_at(graph: Dict[int, Set[int]], start: int, maxdist = 7) -> List[L
     return rings
 
 
-# def find_rings_at(graph: Dict[int, Set[int]], node: int, maxdist = 2) -> List[List[int]]:
-#     print('Starting at node: {}'.format(node))
-#     start_path = [node]  # type: List[int]
-#     q = deque([(node, start_path)])
-#     rings = []  # type: List[List[int]]
-#     found = {node: start_path}  # type: Dict[int, List[int]]
-#     while len(q) > 0:
-#         cur, curpath = q.popleft()
-#         print('Considering {} {}'.format(cur, strpath(curpath)))
-
-#         code.interact(local=dict(globals(), **locals()))
-#         if cur in found:
-#             foundpath = found[cur]
-#             ring = foundpath + list(reversed(curpath))
-#             rings.append(ring)
-#             print('Found ring:', strpath(ring))
-#         else:
-#             found[cur] = curpath
-
-#         if len(curpath) < maxdist:
-#             for neighbor in graph[cur]:
-#                 if neighbor not in found:
-#                     q.append((neighbor, curpath + [neighbor]))
-
-#     return rings
-
 def polygon_contains(bigger: DiscretePoly, smaller: DiscretePoly) -> bool:
     """Tests whether bigger contains smaller.
 
