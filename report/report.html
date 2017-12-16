@@ -23,11 +23,17 @@
 </ul>
 </li>
 <li><a href="#dataset-creation">Dataset Creation</a><ul>
-<li><a href="#task-1-individual-blocks">Task 1: Individual blocks</a><ul>
+<li><a href="#task-1-individual-blocks">Task 1: Individual Blocks</a><ul>
 <li><a href="#overview">Overview</a></li>
 <li><a href="#graph-ring-discovery">Graph Ring Discovery</a></li>
+<li><a href="#block-building-matching-and-rendering">Block-Building Matching and Rendering</a></li>
 </ul>
 </li>
+<li><a href="#task-2-map-regions">Task 2: Map Regions</a><ul>
+<li><a href="#rendering-regions">Rendering Regions</a></li>
+</ul>
+</li>
+<li><a href="#scraping">Scraping</a></li>
 </ul>
 </li>
 </ul>
@@ -130,7 +136,7 @@ account the style and layout of example data \cite{nishida2016example}.</p>
 city layouts using machine learning. Because of this, a significant portion of
 the project time was spent collecting and preprocessing the data. For that
 reason, this section of the report gives a brief overview of this process.</p>
-<h3 id="task-1-individual-blocks">Task 1: Individual blocks</h3>
+<h3 id="task-1-individual-blocks">Task 1: Individual Blocks</h3>
 <p>The first task we address is: given a block, generate the buildings on the
 block. For this task, we process maps data from OpenStreetMaps in order to
 identify and extract blocks.</p>
@@ -139,10 +145,11 @@ identify and extract blocks.</p>
 <p><br /></p>
 <p><img alt="dataset fig 1" src="img/datafig-1.png" />
 <img alt="dataset fig 2" src="img/datafig-2.png" /></p>
-<p><em>Figure TODO: Stages of block extraction, done for the first task. The individual
-steps are described in the running text.</em></p>
+<p><em>Figure TODO: Stages of block extraction, done for the first task. The
+individual steps are described in the running text.</em></p>
 <p><br /></p>
-<p>Block extraction broadly involved the following stages, each of which are illustrated above (Figure TODO):</p>
+<p>Block extraction broadly involved the following stages, each of which are
+illustrated above (Figure TODO):</p>
 <ul>
 <li>
 <p>(a) OpenStreetMaps data is parsed from its native XML format, and all
@@ -186,11 +193,13 @@ steps are described in the running text.</em></p>
 <li>
 <p>(k) Increasing the maximum search depth of the block discovery algorithm, we
   begin to find larger sets of nodes that encompass multiple blocks (darker
-  pink regions). Because some blocks are defined by a large number of nodes due to having curvy roads, some are still missed.</p>
+  pink regions). Because some blocks are defined by a large number of nodes due
+  to having curvy roads, some are still missed.</p>
 </li>
 <li>
 <p>(l) Further increasing the maximum block search depth, we recover all
-  feasible blocks. At this point, heavy duplicate coverage plagues blocks due to the algorithm discovering many false enclosing blocks.</p>
+  feasible blocks. At this point, heavy duplicate coverage plagues blocks due
+  to the algorithm discovering many false enclosing blocks.</p>
 </li>
 <li>
 <p>(m) Removal of false enclosing blocks. This is done by rendering all
@@ -201,14 +210,15 @@ steps are described in the running text.</em></p>
 <h4 id="graph-ring-discovery">Graph Ring Discovery</h4>
 <p>A crucial part of the above process was devising an algorithm to find rings in
 the graph in order to identify candidate blocks. The algorithm is presented
-below in python-like pseudocode with types. It is an augmented breadth-first
-search which tracks unique paths to vertices from paths starting at all neighbors
-of a start vertex.</p>
+below in Python-like pseudocode with types. It is an augmented breadth-first
+search which tracks unique paths to vertices from paths starting at all
+neighbors of a start vertex.</p>
 <p><em>NB: While presenting this algorithm, I was pointed to a simpler algorithm that
 takes into account the the geometry of the map: for each edge, follow edges of
 a maximum angle (e.g., clockwise) until the starting vertex is reached. For
 completeness, I still present here the algorithm that I devised to find rings
 in a graph.</em></p>
+<p><br /></p>
 <div class="codehilite"><pre><span></span><span class="c1"># The overall algorithm searches from each vertex and returns the unique</span>
 <span class="c1"># set of rings discovered.</span>
 <span class="k">def</span> <span class="nf">find_rings</span><span class="p">(</span><span class="n">graph</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Set</span><span class="p">[</span><span class="nb">int</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
@@ -275,5 +285,104 @@ in a graph.</em></p>
             <span class="k">return</span> <span class="bp">False</span>
     <span class="k">return</span> <span class="bp">True</span>
 </pre></div>
+
+
+<p><em>Algorithm 1: Ring discovery in a graph.</em></p>
+<p><br /></p>
+<h4 id="block-building-matching-and-rendering">Block-Building Matching and Rendering</h4>
+<p>After discovering blocks, we then match each block to the set of buildings that
+lie on top of that block. To do this, we perform a point-in-polygon test for
+every vertex of every building onto the polygon defined by every block. While
+this test is an approximation of a polygon-in-polygon test, it works well in
+practice given the shape of blocks and buildings (there are no extreme, sharp
+concavities in the blocks).</p>
+<p>Finally, we pick a standard resolution, and transform all blocks and the
+buildings on top of them to that fixed resolution output. We the use
+Processing[^processing] to render all of the blocks in bulk, creating pairs of
+(empty, populated) blocks, rendering blocks in grey and buildings in black. A
+few example blocks are shown below in Figure TODO.</p>
+<p><br /></p>
+<p><img alt="example blocks" src="img/example_blocks.png" /></p>
+<p><em>Figure TODO: Three examples from the dataset for task 1: generating buildings
+for a block.</em></p>
+<p><br /></p>
+<p>We scrape five different regions of Seattle and extract all blocks with at
+least one building on them, giving a total of 1100 images, which we partition
+into train (521) / val (415) / test (164) splits such that the geographic
+regions do not overlap between the splits.</p>
+<h3 id="task-2-map-regions">Task 2: Map Regions</h3>
+<p>The second task we address is: given a region of a map without any buildings,
+generate all of the buildings.</p>
+<p>This task is simpler from a dataset creation perspective, because it simply
+involves rendering two versions of a map: one with most geographic features
+rendered except buildings, and the second including buildings as well.</p>
+<h4 id="rendering-regions">Rendering Regions</h4>
+<p>The main challenge in creating a more realistic region-filling dataset is
+accurately rendering a broader range of geographic features. Recall in the
+dataset for task 1 that we render only block outlines and buildings. For task
+2, we can encode more context render other geographic features such as
+walkways, parks, and water. The difficulty in doing so is that these features
+are encoded with varying consistency, and at varying levels of abstraction.</p>
+<p>Here are a few examples to illustrate how some features are labeled in the
+OpenStreetMap data:</p>
+<table>
+<thead>
+<tr>
+<th>Tag(s)</th>
+<th>Actual Geographic Feature</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>highway: yes</td>
+<td>highway</td>
+</tr>
+<tr>
+<td>highway: path</td>
+<td>pedestrian walkway</td>
+</tr>
+<tr>
+<td>man_made: pier, source: Yahoo!</td>
+<td>walking area</td>
+</tr>
+<tr>
+<td>source: Yahoo!</td>
+<td>water</td>
+</tr>
+<tr>
+<td>water: yes</td>
+<td>water</td>
+</tr>
+</tbody>
+</table>
+<p>After selecting a variety of regions and manually adding mappings between tags,
+we end up with seven possible semantic categories per map that we render: (1)
+nothing (light grey) (blocks are colored this way), (2) buildings (red
+polygons), (3) roads (yellow lines), (4) water (blue polygons), (5) pedestrian
+areas (darker grey polygons), (6) pedestrian walkways (darker grey lines), (7)
+parks (green polygons). Two example renderings are shown below in Figure TODO:</p>
+<p><br /></p>
+<p><img alt="example regions" src="img/example_regions.png" /></p>
+<p><em>Figure TODO: Two example regions in the dataset for task 2.</em></p>
+<p><br /></p>
+<h3 id="scraping">Scraping</h3>
+<p>The only additional complication with rendering larger map segments is that the
+amount of map data required is significantly greater. We address this by
+building a small scraping pipeline that walks a given latitude, longitude
+geographic region by fixed window sizes (chosen to render well onto a square
+image).</p>
+<p>We scrape a region encompassing the greater Seattle area: from the Puget Sound
+(W) to Sammamish (E), and from SeaTac (S) to Mountlake Terrace (N). This
+results in 2967 individual regions, which we filtered to include only those
+with at least one building.</p>
+<p>TODO: final numbers, also MB size, and splits</p>
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:Processing">
+<p>https://processing.org/&#160;<a class="footnote-backref" href="#fnref:Processing" rev="footnote" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
 </body>
 </html>
