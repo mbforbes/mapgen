@@ -124,3 +124,154 @@ To the best of our knowledge, no previous work attempt the task of generating
 city layouts using machine learning. Because of this, a significant portion of
 the project time was spent collecting and preprocessing the data. For that
 reason, this section of the report gives a brief overview of this process.
+
+### Task 1: Individual blocks
+
+The first task we address is: given a block, generate the buildings on the
+block. For this task, we process maps data from OpenStreetMaps in order to
+identify and extract blocks.
+
+#### Overview
+
+The overall processes of the block extraction is shown below in figure TODO.
+
+<br />
+
+![dataset fig 1](img/datafig-1.png)
+![dataset fig 2](img/datafig-2.png)
+
+_Figure TODO: Stages of block extraction, done for the first task. The individual
+steps are described in the running text._
+
+<br />
+
+Block extraction broadly involved the following stages, each of which are illustrated above (Figure TODO):
+
+- (a) OpenStreetMaps data is parsed from its native XML format, and all
+  _ways_ (collections of nodes) are rendered as polygons.
+
+- (b) Crowdsourced labels are aggregated into high-level features (such as
+  buildings and roads) and polygons are colored according to their predominant
+  feature.
+
+- (c) Roads are the only _ways_ that should not be rendered as polygons; they
+  are properly drawn as polylines.
+
+- (d) Nodes that serve as the underlying points for road _ways_ are rendered.
+
+- (e) Road nodes are rendered in varying sizes to confirm that roads are drawn
+  independently (i.e., informing us that intersections must be discovered).
+
+- (f) Nodes are recursively collapsed by finding nodes within a geographic
+  euclidean distance and recursively building a map of backpointers.
+
+- (g) Now that nodes connect roads together, the map may be rendered as a
+  graph, here shown in green and blue.
+
+- (i) First stage of block discovery: blocks of small distance (up to four
+  edges) are discovered, but duplicates exist because the same block may be
+  discovered by multiple nodes.
+
+- (j) Deduplication of identical blocks by keeping only unique sets of
+  vertices. (Blocks are rendered with semi-transparency; the difference can be
+  seen here from the last step because the blocks are a lighter shade of pink,
+  indicating they only exist once.)
+
+- (k) Increasing the maximum search depth of the block discovery algorithm, we
+  begin to find larger sets of nodes that encompass multiple blocks (darker
+  pink regions). Because some blocks are defined by a large number of nodes due to having curvy roads, some are still missed.
+
+- (l) Further increasing the maximum block search depth, we recover all
+  feasible blocks. At this point, heavy duplicate coverage plagues blocks due to the algorithm discovering many false enclosing blocks.
+
+- (m) Removal of false enclosing blocks. This is done by rendering all
+  candidate blocks and removing any large candidates that fully enclose smaller
+  candidates.
+
+
+#### Graph Ring Discovery
+
+A crucial part of the above process was devising an algorithm to find rings in
+the graph in order to identify candidate blocks. The algorithm is presented
+below in python-like pseudocode with types. It is an augmented breadth-first
+search which tracks unique paths to vertices from paths starting at all neighbors
+of a start vertex.
+
+_NB: While presenting this algorithm, I was pointed to a simpler algorithm that
+takes into account the the geometry of the map: for each edge, follow edges of
+a maximum angle (e.g., clockwise) until the starting vertex is reached. For
+completeness, I still present here the algorithm that I devised to find rings
+in a graph._
+
+<br />
+
+    :::python
+    # The overall algorithm searches from each vertex and returns the unique
+    # set of rings discovered.
+    def find_rings(graph: Dict[int, Set[int]]) -> List[List[int]]:
+        return unique(find_rings_at(graph, n) for n in graph.keys())
+
+
+    # The bulk of the algorithm finds all rings that involve a chosen vertex up
+    # to a maximum depth.
+    def find_rings_at(graph: Dict[int, Set[int]], start: int,
+                      maxdepth: int) -> List[List[int]]:
+        # Setup.
+        start_path = [start]  # type: List[int]
+        shortest = {}  # type: Dict[int, List[List[int]]]
+        q = Queue([(start, start_path)])
+
+        # First, find sets of unique paths to surrounding vertices.
+        while len(q) > 0:
+            # Consider the vertex just found, a candidate "shortest path."
+            cur, curpath = q.pop()
+            if can_add_to_shortest(cur, curpath, shortest):
+                if cur not in shortest:
+                    shortest[cur] = []
+                shortest[cur].append(curpath)
+
+            # Add neighbors to queue if we haven't explored to max depth yet.
+            if len(curpath) < maxdepth:
+                for neighbor in graph[cur]:
+                    # No backtracking per path.
+                    if neighbor not in curpath:
+                        q.append((neighbor, curpath + [neighbor]))
+
+        # Now, extract rings. They are discovered vertices with multiple paths.
+        rings = []
+        for candidate in shortest.keys():
+            paths = shortest[candidate]
+            if len(paths) > 1:
+                # Use the first two paths found, and remove duplicate nodes
+                # (first and last) from the second.
+                p1 = paths[0]
+                p2 = paths[1]
+                rings.append(p1 + list(reversed(p2[1:-1])))
+
+        return rings
+
+    # This helper algorithm determines whether a candidate path should be added
+    # to the set of shortest paths to a vertex.
+    def can_add_to_shortest(cur: int, curpath: List[int],
+                            shortest: Dict[int, List[List[int]]]) -> bool:
+        # If shortest hasn't found cur yet, then found a new shortest path.
+        if cur not in shortest:
+            return True
+
+        # Crowdsourced map data; might have multiple edges between two vertices.
+        if len(curpath) == 2:
+            return False
+
+        # Interesting case: We want to add only if we've found a new path to
+        # this node that is unique; i.e., the middle nodes (excluding start and
+        # cur) have nothing in common with any other paths.
+        middle = set(curpath[1:-1])
+        for p in shortest[cur]:
+            exist_middle = set(p[1:-1])
+            if len(exist_middle.intersection(middle)) > 0:
+                return False
+        return True
+
+_Algorithm 1: Ring discovery in a graph._
+
+<br />

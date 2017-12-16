@@ -23,6 +23,7 @@ class Settings:
     MD_EXTENSIONS = [
         'markdown.extensions.footnotes',
         'markdown.extensions.tables',
+        'markdown.extensions.codehilite',
         TocExtension(baselevel=1, title='Table of Contents'),
     ]
 
