@@ -50,6 +50,19 @@ void drawBuilding(int[][] coords) {
     endShape(CLOSE);
 }
 
+void drawWalkway(int[][] coords) {
+    // TODO: stroke
+    // TODO: any line thickness?
+    // TODO: color
+    fill(200);
+    stroke(0);
+    beginShape();
+    for (int i = 0; i < coords.length; i++) {
+        vertex(coords[i][0], coords[i][1]);
+    }
+    endShape(CLOSE);
+}
+
 void drawHighway(int[][] coords) {
     // TODO: line thickness
     // TODO: line color
@@ -93,6 +106,9 @@ void handleFile(String in_path, String out_path) {
         }
         if (category.equals("water")) {
             drawWater(coords);
+        }
+        if (category.equals("walkway")) {
+            drawWalkway(coords);
         }
     }
 

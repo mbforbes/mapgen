@@ -36,10 +36,18 @@ import geo
 
 # playing
 
+def get_way_detailed_features(way_el: ET.Element) -> Dict[str, str]:
+    features = {}  # type: Dict[str, str]
+    for child in way_el:
+        if child.tag == 'tag':
+            tag_feats = get_tag_detailed_features(child)
+            for k, v in tag_feats.items():
+                features[k] = v
+    return features
+
+
 def get_way_features(way_el: ET.Element) -> Set[str]:
     """Gets any features that we're considering and returns them.
-
-    TODO: eventually belongs in OSM
     """
     features = set()
     for child in way_el:
@@ -48,13 +56,33 @@ def get_way_features(way_el: ET.Element) -> Set[str]:
     return features
 
 
+def get_tag_detailed_features(tag_el: ET.Element) -> Dict[str, str]:
+    if 'k' not in tag_el.attrib:
+        return {}
+    key = tag_el.attrib['k']
+
+    if 'v' not in tag_el.attrib:
+        return {key: ''}
+
+    val = tag_el.attrib['v']
+    return {key: val}
+
+
 def get_tag_features(tag_el: ET.Element) -> Set[str]:
     """Gets any features that we're considering and returns them.
     """
-    feature_set = {'building', 'highway', 'water'}
     if 'k' not in tag_el.attrib:
         return set()
     key = tag_el.attrib['k']
+
+    # new new: any, w/ val
+    # return set([','.join([key, tag_el.attrib['v']])])
+
+    # new: any
+    # return set([key])
+
+    # old: restrict
+    feature_set = {'building', 'highway', 'water'}
     if key in feature_set:
         return set([key])
     return set()
@@ -106,6 +134,8 @@ def get_color(features: List[str]) -> str:
         return 'yellow'
     if 'water' in features:
         return 'blue'
+    if 'source' in features:
+        return 'pink'
     return 'lime'
 
 
@@ -256,18 +286,20 @@ def render(
     for i, pixel_meta_poly in enumerate(pixel_meta_polys):
         points = ' '.join(','.join(str(coord) for coord in point) for point in pixel_meta_poly['points'])
         inner_els.append(
-            '<polygon points="{}" style="fill:{};stroke:black;stroke-width:1" />'.format(
+            '<polygon points="{}" fill-opacity="0.4" style="fill:{};stroke:black;stroke-width:1" class="{}"/>'.format(
                 points,
-                get_color(pixel_meta_poly['features'])
+                get_color(pixel_meta_poly['features']),
+                ';'.join(pixel_meta_poly['features']),
             )
         )
     for i, pixel_meta_road in enumerate(pixel_meta_roads):
         points = ' '.join(','.join(str(coord) for coord in point) for point in pixel_meta_road['points'])
         inner_els.append(
-            '<polyline points="{}" style="fill:none;stroke:{};stroke-width:{}" />'.format(
+            '<polyline points="{}" style="fill:none;stroke:{};stroke-width:{}" class="{}"/>'.format(
                 points,
                 get_color(pixel_meta_road['features']),
                 get_line_width(pixel_meta_road['features']),
+                ';'.join(pixel_meta_road['features']),
             )
         )
     for x, y in pixel_road_points:
@@ -473,7 +505,7 @@ def preproc(fn: str) -> Tuple[Dict[int, ET.Element], List[ET.Element], Tuple[flo
 
 def main():
     # parse XML tree and get root
-    fn = 'data/north-winds.osm'
+    fn = 'data/chunk-test-1.osm'
     node_map, ways, geo_bounds = preproc(fn)
 
     # try to figure out the format
