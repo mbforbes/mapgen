@@ -305,7 +305,7 @@ practice given the shape of blocks and buildings (there are no extreme, sharp
 concavities in the blocks).
 
 Finally, we pick a standard resolution, and transform all blocks and the
-buildings on top of them to that fixed resolution output. We the use
+buildings on top of them to that fixed resolution output. We then use
 Processing[^processing] to render all of the blocks in bulk, creating pairs of
 (empty, populated) blocks, rendering blocks in grey and buildings in black.
 Several example blocks are shown below in Figure 4.
@@ -343,9 +343,10 @@ rendered except buildings, and the second including buildings as well.
 The main challenge in creating a more realistic region-filling dataset is
 accurately rendering a broader range of geographic features. Recall in the
 dataset for task 1 that we render only block outlines and buildings. For task
-2, we can encode more context render other geographic features such as
-walkways, parks, and water. The difficulty in doing so is that these features
-are encoded with varying consistency, and at varying levels of abstraction.
+2, we can encode more context and render additional geographic features, such
+as walkways, parks, and water. The difficulty in doing so is that these
+features are encoded with varying consistency, and at varying levels of
+abstraction.
 
 Here are a few examples to illustrate how some features are labeled in the
 OpenStreetMap data:
@@ -399,9 +400,10 @@ We use the conditional adversarial network, proposed by Isola et al.
 (2017).[^pix2pix]
 
 This model trains two networks, a generator, and a discriminator. The generator
-produces candidate output images, and the discriminator attempts to distinguish
-between real output images and fake ones. They are trained together so that as
-the generator produces more realistic images, the generator also gets better at
+produces candidate output images, and the discriminator attempts to decide
+whether a given (input, output) pair is real, or whether the output was in fact
+created by the generator. They are trained together so that as the generator
+produces more realistic images, the discriminator also gets better at
 distinguishing them.
 
 We use the same model presented in the paper by Isola et al., in which many
@@ -424,10 +426,10 @@ grey squares as input).
 
 At the beginning of training, the model has trouble producing coherent shapes,
 and has not yet learned that it should only output one of three color values.
-This can be seen in Figure 6, with the multicolor banding on the right side
-of the image. It is able to immediately learn to reproduce the grey outline of
-the input block, and never draws black (buildings) on top of white (empty
-space).
+This can be seen in Figure 6 with the multicolor banding on the right side of
+the image. However, it is able to immediately learn to reproduce the grey
+outline of the input block, and never draws black (buildings) on top of white
+(empty space).
 
 <br />
 
@@ -449,15 +451,14 @@ _Figure 7: Task 1, after 9 epochs._
 
 <br />
 
-By the the end of training model is able to generate fairly convincing
+By the the end of training, the model is able to generate fairly convincing
 filled-in blocks. It is interesting to note that the L1 loss does not drop
 after about ten epochs, but the visual quality continues to improve. This can
-be understood by looking at one of the final outputs, in Figure 8. Without
-the gold output (far right), it would be difficult to tell whether the
-generation (middle) is correct. In that sense, it may well fool a
-discriminator, human or neural network. However, the L1 distance from the
-generated image to the gold is terrible, as it got the buildings almost
-completely wrong.
+be understood by looking at one of the final outputs, in Figure 8. Without the
+gold output (far right), it would be difficult to tell whether the generation
+(middle) is correct. In that sense, it may well fool a discriminator, human or
+neural network. However, the L1 distance from the generated image to the gold
+is terrible, as it got the buildings almost completely wrong.
 
 <br />
 
@@ -544,8 +545,8 @@ The second row shows a geographic pattern the model has learned: near parks,
 there are few buildings. The buildings that exist near parks are also rarely on
 the parks themselves (with rare exceptions being visitor centers).
 
-The third row shows a seemingly trivial but interesting pattern the model has
-learned: that buildings do not go between freeway roads.
+The third row illustrates a seemingly trivial but interesting pattern the model
+has learned: that buildings do not go between freeway roads.
 
 <br />
 
@@ -693,6 +694,6 @@ pages 5–17. Wiley Online Library, 2016.
 _Image-to-image translation with conditional adversarial networks._ In CVPR,
 2017.
 
-[^Processing]: https://processing.org/
+[^processing]: https://processing.org/
 
 [^githubmapgen]: https://github.com/mbforbes/mapgen

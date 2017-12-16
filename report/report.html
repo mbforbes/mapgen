@@ -320,8 +320,8 @@ this test is an approximation of a polygon-in-polygon test, it works well in
 practice given the shape of blocks and buildings (there are no extreme, sharp
 concavities in the blocks).</p>
 <p>Finally, we pick a standard resolution, and transform all blocks and the
-buildings on top of them to that fixed resolution output. We the use
-Processing[^processing] to render all of the blocks in bulk, creating pairs of
+buildings on top of them to that fixed resolution output. We then use
+Processing<sup id="fnref:processing"><a class="footnote-ref" href="#fn:processing" rel="footnote">15</a></sup> to render all of the blocks in bulk, creating pairs of
 (empty, populated) blocks, rendering blocks in grey and buildings in black.
 Several example blocks are shown below in Figure 4.</p>
 <p><br /></p>
@@ -348,9 +348,10 @@ rendered except buildings, and the second including buildings as well.</p>
 <p>The main challenge in creating a more realistic region-filling dataset is
 accurately rendering a broader range of geographic features. Recall in the
 dataset for task 1 that we render only block outlines and buildings. For task
-2, we can encode more context render other geographic features such as
-walkways, parks, and water. The difficulty in doing so is that these features
-are encoded with varying consistency, and at varying levels of abstraction.</p>
+2, we can encode more context and render additional geographic features, such
+as walkways, parks, and water. The difficulty in doing so is that these
+features are encoded with varying consistency, and at varying levels of
+abstraction.</p>
 <p>Here are a few examples to illustrate how some features are labeled in the
 OpenStreetMap data:</p>
 <table>
@@ -414,9 +415,10 @@ into train (1680) / val (100) / test (100) splits.</p>
 <p>We use the conditional adversarial network, proposed by Isola et al.
 (2017).<sup id="fnref:pix2pix"><a class="footnote-ref" href="#fn:pix2pix" rel="footnote">14</a></sup></p>
 <p>This model trains two networks, a generator, and a discriminator. The generator
-produces candidate output images, and the discriminator attempts to distinguish
-between real output images and fake ones. They are trained together so that as
-the generator produces more realistic images, the generator also gets better at
+produces candidate output images, and the discriminator attempts to decide
+whether a given (input, output) pair is real, or whether the output was in fact
+created by the generator. They are trained together so that as the generator
+produces more realistic images, the discriminator also gets better at
 distinguishing them.</p>
 <p>We use the same model presented in the paper by Isola et al., in which many
 more details can be found. We briefly note here that GAN (generative
@@ -435,10 +437,10 @@ grey squares as input).</p>
 <h3 id="task-1">Task 1</h3>
 <p>At the beginning of training, the model has trouble producing coherent shapes,
 and has not yet learned that it should only output one of three color values.
-This can be seen in Figure 6, with the multicolor banding on the right side
-of the image. It is able to immediately learn to reproduce the grey outline of
-the input block, and never draws black (buildings) on top of white (empty
-space).</p>
+This can be seen in Figure 6 with the multicolor banding on the right side of
+the image. However, it is able to immediately learn to reproduce the grey
+outline of the input block, and never draws black (buildings) on top of white
+(empty space).</p>
 <p><br /></p>
 <p><img alt="task 1 epoch 1" src="img/task1-epoch1.png" /></p>
 <p><em>Figure 6: Task 1, after 1 epoch (pass over training data).</em></p>
@@ -450,15 +452,14 @@ enough to fool a human judge.</p>
 <p><img alt="task 1 epoch 9" src="img/task1-epoch9.png" /></p>
 <p><em>Figure 7: Task 1, after 9 epochs.</em></p>
 <p><br /></p>
-<p>By the the end of training model is able to generate fairly convincing
+<p>By the the end of training, the model is able to generate fairly convincing
 filled-in blocks. It is interesting to note that the L1 loss does not drop
 after about ten epochs, but the visual quality continues to improve. This can
-be understood by looking at one of the final outputs, in Figure 8. Without
-the gold output (far right), it would be difficult to tell whether the
-generation (middle) is correct. In that sense, it may well fool a
-discriminator, human or neural network. However, the L1 distance from the
-generated image to the gold is terrible, as it got the buildings almost
-completely wrong.</p>
+be understood by looking at one of the final outputs, in Figure 8. Without the
+gold output (far right), it would be difficult to tell whether the generation
+(middle) is correct. In that sense, it may well fool a discriminator, human or
+neural network. However, the L1 distance from the generated image to the gold
+is terrible, as it got the buildings almost completely wrong.</p>
 <p><br /></p>
 <p><img alt="task 1 epoch 193" src="img/task1-epoch193.png" /></p>
 <p><em>Figure 8: Task 1, after 193 epochs. (The model was trained for 200 epochs
@@ -513,8 +514,8 @@ for human eyes to distinguish (for subjective quality).</p>
 <p>The second row shows a geographic pattern the model has learned: near parks,
 there are few buildings. The buildings that exist near parks are also rarely on
 the parks themselves (with rare exceptions being visitor centers).</p>
-<p>The third row shows a seemingly trivial but interesting pattern the model has
-learned: that buildings do not go between freeway roads.</p>
+<p>The third row illustrates a seemingly trivial but interesting pattern the model
+has learned: that buildings do not go between freeway roads.</p>
 <p><br /></p>
 <p><img alt="task 2 successes" src="img/task2-successes.png" /></p>
 <p><em>Figure 13: Task 2, three patterns the model has learned to reproduce well.</em></p>
@@ -656,8 +657,8 @@ pages 5–17. Wiley Online Library, 2016.&#160;<a class="footnote-backref" href=
 <em>Image-to-image translation with conditional adversarial networks.</em> In CVPR,
 2017.&#160;<a class="footnote-backref" href="#fnref:pix2pix" rev="footnote" title="Jump back to footnote 14 in the text">&#8617;</a></p>
 </li>
-<li id="fn:Processing">
-<p>https://processing.org/&#160;<a class="footnote-backref" href="#fnref:Processing" rev="footnote" title="Jump back to footnote 15 in the text">&#8617;</a></p>
+<li id="fn:processing">
+<p>https://processing.org/&#160;<a class="footnote-backref" href="#fnref:processing" rev="footnote" title="Jump back to footnote 15 in the text">&#8617;</a></p>
 </li>
 <li id="fn:githubmapgen">
 <p>https://github.com/mbforbes/mapgen&#160;<a class="footnote-backref" href="#fnref:githubmapgen" rev="footnote" title="Jump back to footnote 16 in the text">&#8617;</a></p>
