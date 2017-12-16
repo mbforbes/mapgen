@@ -87,20 +87,20 @@ grammars of the generation algorithm.</p>
 <p>In this project, we approach the first domain of urban procedural generation:
 generating the layout for a city. Within this domain, we further restrict our
 focus to the following task: given a road network and city features (like water
-and parks), fill in the buildings inside of blocks. Figure TODO shows a visual
+and parks), fill in the buildings inside of blocks. Figure 1 shows a visual
 depiction of our task.</p>
 <p><br /></p>
 <p><img alt="dataset fig 1" src="img/task_overview.png" /></p>
-<p><em>Figure TODO: Task overview: given a road network, we attempt to directly fill
-in blocks with buildings.</em></p>
+<p><em>Figure 1: Task overview: given a road network, we attempt to directly fill in
+blocks with buildings.</em></p>
 <p><br /></p>
 <p>We split this overall task into two subtasks. In the first subtask, we extract
 individual blocks with their buildings laid out on top of them. The goal is to
-generate the buildings for a single block at a time (Figure TODO, upper half).
+generate the buildings for a single block at a time (Figure 2, upper half).
 This problem is more constrained, and provides an early test of the model's
 capabilities.</p>
 <p>In the second subtask, we provide a larger chunk of a city as input, and ask
-the model to fill in buildings in all the empty blocks provided (Figure TODO,
+the model to fill in buildings in all the empty blocks provided (Figure 2,
 lower half). This task is more difficult, because more buildings must be
 generated and placed within the bounds of blocks. But because we also provide
 geographic features like water and parks in the input, a model can potentially
@@ -108,7 +108,7 @@ take advantage of these semantic cues to generate layouts that are sensitive to
 their surroundings.</p>
 <p><br /></p>
 <p><img alt="2 tasks" src="img/2tasks.png" /></p>
-<p><em>Figure TODO: The two tasks we consider. In both cases, buildings must be
+<p><em>Figure 2: The two tasks we consider. In both cases, buildings must be
 generated on top of an input image. The difference is in the size of the region
 and the amount of geographic context provided.</em></p>
 <p><br /></p>
@@ -164,15 +164,15 @@ reason, this section of the report gives a brief overview of this process.</p>
 block. For this task, we process maps data from OpenStreetMaps in order to
 identify and extract blocks.</p>
 <h4 id="overview">Overview</h4>
-<p>The overall processes of the block extraction is shown below in figure TODO.</p>
+<p>The overall processes of the block extraction is shown below in Figure 3.</p>
 <p><br /></p>
 <p><img alt="dataset fig 1" src="img/datafig-1.png" />
 <img alt="dataset fig 2" src="img/datafig-2.png" /></p>
-<p><em>Figure TODO: Stages of block extraction, done for the first task. The
+<p><em>Figure 3: Stages of block extraction, done for the first task. The
 individual steps are described in the running text.</em></p>
 <p><br /></p>
 <p>Block extraction broadly involved the following stages, each of which are
-illustrated above (Figure TODO):</p>
+illustrated above (Figure 3):</p>
 <ul>
 <li>
 <p>(a) OpenStreetMaps data is parsed from its native XML format, and all
@@ -323,10 +323,10 @@ concavities in the blocks).</p>
 buildings on top of them to that fixed resolution output. We the use
 Processing[^processing] to render all of the blocks in bulk, creating pairs of
 (empty, populated) blocks, rendering blocks in grey and buildings in black.
-Several example blocks are shown below in Figure TODO.</p>
+Several example blocks are shown below in Figure 4.</p>
 <p><br /></p>
 <p><img alt="example blocks" src="img/example_blocks.png" /></p>
-<p><em>Figure TODO: Four examples from the dataset for task 1: generating buildings
+<p><em>Figure 4: Four examples from the dataset for task 1: generating buildings
 for a block. Whereas some blocks have distinct shapes around which buildings
 must be placed (columns one and two), others provide almost no input but
 require specific outputs (columns three and four). Currently, uniform scaling
@@ -388,10 +388,10 @@ we end up with seven possible semantic categories per map that we render: (1)
 nothing (light grey) (blocks are colored this way), (2) buildings (red
 polygons), (3) roads (yellow lines), (4) water (blue polygons), (5) pedestrian
 areas (darker grey polygons), (6) pedestrian walkways (darker grey lines), (7)
-parks (green polygons). Four example renderings are shown below in Figure TODO:</p>
+parks (green polygons). Four example renderings are shown below in Figure 5:</p>
 <p><br /></p>
 <p><img alt="example regions" src="img/example_regions.png" /></p>
-<p><em>Figure TODO: Four example regions in the dataset for task 2. The dataset
+<p><em>Figure 5: Four example regions in the dataset for task 2. The dataset
 exhibits a wide variety in the correct number of buildings in the output, as
 can be seen by the second column, which should be left mostly blank.
 Furthermore, note the presence of pedestrian footpaths around which buildings
@@ -435,25 +435,25 @@ grey squares as input).</p>
 <h3 id="task-1">Task 1</h3>
 <p>At the beginning of training, the model has trouble producing coherent shapes,
 and has not yet learned that it should only output one of three color values.
-This can be seen in Figure TODO, with the multicolor banding on the right side
+This can be seen in Figure 6, with the multicolor banding on the right side
 of the image. It is able to immediately learn to reproduce the grey outline of
 the input block, and never draws black (buildings) on top of white (empty
 space).</p>
 <p><br /></p>
 <p><img alt="task 1 epoch 1" src="img/task1-epoch1.png" /></p>
-<p><em>Figure TODO: Task 1, after 1 epoch (pass over training data).</em></p>
+<p><em>Figure 6: Task 1, after 1 epoch (pass over training data).</em></p>
 <p><br /></p>
 <p>After nine epochs, the model is able to produce more ambitious shapes (Figure
-TODO), but the shapes are too densely connected and rounded to be convincing
+7), but the shapes are too densely connected and rounded to be convincing
 enough to fool a human judge.</p>
 <p><br /></p>
 <p><img alt="task 1 epoch 9" src="img/task1-epoch9.png" /></p>
-<p><em>Figure TODO: Task 1, after 9 epochs.</em></p>
+<p><em>Figure 7: Task 1, after 9 epochs.</em></p>
 <p><br /></p>
 <p>By the the end of training model is able to generate fairly convincing
 filled-in blocks. It is interesting to note that the L1 loss does not drop
 after about ten epochs, but the visual quality continues to improve. This can
-be understood by looking at one of the final outputs, in Figure TODO. Without
+be understood by looking at one of the final outputs, in Figure 8. Without
 the gold output (far right), it would be difficult to tell whether the
 generation (middle) is correct. In that sense, it may well fool a
 discriminator, human or neural network. However, the L1 distance from the
@@ -461,18 +461,18 @@ generated image to the gold is terrible, as it got the buildings almost
 completely wrong.</p>
 <p><br /></p>
 <p><img alt="task 1 epoch 193" src="img/task1-epoch193.png" /></p>
-<p><em>Figure TODO: Task 1, after 193 epochs. (The model was trained for 200 epochs
+<p><em>Figure 8: Task 1, after 193 epochs. (The model was trained for 200 epochs
 in total.)</em></p>
 <p><br /></p>
 <h4 id="mode-collapse">Mode collapse</h4>
 <p>One question we were interested to investigate is: does the conditional
 adversarial network suffer from mode collapse in this task?</p>
 <p>During the middle of training, we observed what appeared to be mode collapse,
-as can be seen in Figure TODO. The model repeatedly generates a single building
+as can be seen in Figure 9. The model repeatedly generates a single building
 near the bottom of the image.</p>
 <p><br /></p>
 <p><img alt="task 1 possible mode collapse" src="img/task1_mode_collapse.png" /></p>
-<p><em>Figure TODO: Task 1, experiencing possible mode collapse at a handful of earlier
+<p><em>Figure 9: Task 1, experiencing possible mode collapse at a handful of earlier
 epochs.</em></p>
 <p><br /></p>
 <p>Though this effect is understandable given the potential confounding inputs
@@ -484,28 +484,28 @@ further model analysis to propose an answer to this question.</p>
 <h3 id="task-2">Task 2</h3>
 <p>Similar to with task 1, the model is able to pick up on copying general
 background shapes over to the output by the end of epoch 1, though the results
-are fuzzy, and it has trouble producing buildings (Figure TODO).</p>
+are fuzzy, and it has trouble producing buildings (Figure 10).</p>
 <p><br /></p>
 <p><img alt="task 2 epoch 1" src="img/task2-epoch1.png" /></p>
-<p><em>Figure TODO: Task 2, after 1 epoch.</em></p>
+<p><em>Figure 10: Task 2, after 1 epoch.</em></p>
 <p><br /></p>
 <p>By a few dozen epochs in, the model faithfully copies over the non-building
 context, and generates buildings in largely the appropriate places. However, at
-this point it prefers larger blobs in as many spots as possible, producing cellular-looking outputs that are easily recognized as fake (Figure TODO).</p>
+this point it prefers larger blobs in as many spots as possible, producing cellular-looking outputs that are easily recognized as fake (Figure 11).</p>
 <p><br /></p>
 <p><img alt="task 2 epoch 44" src="img/task2-epoch44.png" /></p>
-<p><em>Figure TODO: Task 2, after 44 epochs.</em></p>
+<p><em>Figure 11: Task 2, after 44 epochs.</em></p>
 <p><br /></p>
 <p>By the end of training, the model has reached generally decent performance on
-many of the inputs. Figure TODO shows the model after its final 200th epoch of
+many of the inputs. Figure 12 shows the model after its final 200th epoch of
 training, generating a remarkably faithful output compared to the gold.</p>
 <p><br /></p>
 <p><img alt="task 2 epoch 200" src="img/task2-epoch200.png" /></p>
-<p><em>Figure TODO: Task 2, the final model after 200 epochs.</em></p>
+<p><em>Figure 12: Task 2, the final model after 200 epochs.</em></p>
 <p><br /></p>
 <h4 id="success-cases">Success cases</h4>
 <p>There are a few cases that the model can handle very well, shown in the three
-rows in Figure TODO. The first row demonstrates the situation where the model
+rows in Figure 13. The first row demonstrates the situation where the model
 excels the most: in regular, dense, suburban grids. This is likely due to the
 large quantity of similarly structured examples in the training set, as well as
 the uniformity of the output being both regular (for the model) and difficult
@@ -517,10 +517,10 @@ the parks themselves (with rare exceptions being visitor centers).</p>
 learned: that buildings do not go between freeway roads.</p>
 <p><br /></p>
 <p><img alt="task 2 successes" src="img/task2-successes.png" /></p>
-<p><em>Figure TODO: Task 2, three patterns the model has learned to reproduce well.</em></p>
+<p><em>Figure 13: Task 2, three patterns the model has learned to reproduce well.</em></p>
 <p><br /></p>
 <h4 id="failure-cases">Failure cases</h4>
-<p>The model is of course not without its shortcomings. Figure TODO illustrates
+<p>The model is of course not without its shortcomings. Figure 14 illustrates
 two of the main problems that plague the model even after it is fully trained.
 In the first row we see that the model still generates blobs for buildings,
 especially in-between curvy blocks. The second row demonstrates visual
@@ -529,12 +529,12 @@ banding in the green park area, and the color mixtures around the long vertical
 grey lines.</p>
 <p><br /></p>
 <p><img alt="task 2 failures" src="img/task2-problems.png" /></p>
-<p><em>Figure TODO: Task 2, two problems the model has even after training.</em></p>
+<p><em>Figure 14: Task 2, two problems the model has even after training.</em></p>
 <p><br /></p>
 <h4 id="unpredictable-sparsity">Unpredictable Sparsity</h4>
 <p>Some of the most frequent failures cases for the model were arguably not due to
 shortcomings of the model itself, but the unpredictability of the task. Figure
-TODO shows the sparsity / density issue happening in both directions. Some road
+15 shows the sparsity / density issue happening in both directions. Some road
 networks, though seemingly regular and residential, in fact have no buildings
 in them, and so the model guesses completely wrong (first row). On the other
 hand, other road networks that appear to possibly be barren industrial areas
@@ -542,7 +542,7 @@ near a highway are actually densely lined, and the model guesses the wrong way
 by leaving them empty (bottom row).</p>
 <p><br /></p>
 <p><img alt="task 2 sparsity" src="img/task2-sparsity.png" /></p>
-<p><em>Figure TODO: Task 2, sparsity (or density) that is difficult to predict.</em></p>
+<p><em>Figure 15: Task 2, sparsity (or density) that is difficult to predict.</em></p>
 <p><br /></p>
 <p>It may be worth taking a careful pass over several more samples of the dataset
 to ensure that the above sparse blocks are truly empty. One possibility is that
