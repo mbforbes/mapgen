@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Max Forbes: CSE 557 Project Report</title>
+    <link href="css/report.css" rel="stylesheet">
+
+    <script type="text/javascript" async
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML">
+    </script>
+</head>
+<body>
+<h1>A Machine Learning Approach <i>to</i> Procedural City Layout Generation</h1>
+
+<p><em>Maxwell Forbes</em><br />
+<em>CSE 557 Final Project Report</em><br />
+<em>December 15, 2017</em></p>
+<div class="toc"><span class="toctitle">Table of Contents</span><ul>
+<li><a href="#introduction">Introduction</a><ul>
+<li><a href="#motivation">Motivation</a></li>
+<li><a href="#task">Task</a></li>
+</ul>
+</li>
+<li><a href="#related-work">Related Work</a><ul>
+<li><a href="#inverse-procedural-modeling-and-shape-learning">Inverse Procedural Modeling and Shape Learning</a></li>
+<li><a href="#city-modeling">City Modeling</a></li>
+</ul>
+</li>
+<li><a href="#dataset-creation">Dataset Creation</a></li>
+</ul>
+</div>
+<h2 id="introduction">Introduction</h2>
+<h3 id="motivation">Motivation</h3>
+<p>Procedural generation affords the creation of large, authentic looking
+environments with far less time and effort than manual modeling.</p>
+<p>The domain of <em>urban</em> procedural generation can be roughly split into three
+sub-problems: layout modelling (maps and roads), building modelling (3D
+geometries), and facade modelling (3D facades and textures)
+\cite{vanegas2010modelling}. Exciting advances in all of these areas have led
+to remarkably realistic results, such as generating cities that expand over
+time \cite{weber2009interactive} and villages that grow based on their
+geography \cite{emilien2012procedural}.</p>
+<p>While procedural generation offers great gains compared to manually creating
+content, a key problem still exists: the designers of such generation systems
+create the algorithms by manually designing and encoding grammars that produce
+realistic looking results. This process requires substantial domain expertise
+and significant trial and error. In other words, procedural generation does not
+remove the manual effort required to generate large cities; it simply shifts
+the effort from 3D modeling to algorithm design!</p>
+<p>However, for city layouts, freely available data from crowdsourced map projects
+now exist. From this data, it may be possible to train a machine learning model
+that can automatically generate city layouts without any hand-tuned grammar
+rules.</p>
+<p>In addition to simply removing the manual work of designing generation
+algorithms, a machine learning model offers other pragmatic advantages to
+virtual city creators. For example, a model would learn to generate cities in
+the <em>style</em> of the geographic area on which it was trained. An old European
+town will present different layout patterns than a bustling metropolis like
+Tokyo. A machine learning model could capture these differences simply by being
+retrained on different data, without needed to re-design the parameters or
+grammars of the generation algorithm.</p>
+<h3 id="task">Task</h3>
+<p>In this project, we approach the first domain of urban procedural generation:
+generating the layout for a city. Within this domain, we further restrict our
+focus to the following task: given a road network and city features (like water
+and parks), fill in the buildings inside of blocks. Figure TODO shows a visual
+depiction of our task.</p>
+<p>TODO: figure for task</p>
+<p>We split this overall task into two subtasks. In the first subtask, we extract
+individual blocks with their buildings laid out on top of them. The goal is to
+generate the buildings for a single block at a time (Figure TODO (a)). This
+problem is more constrained, and provides an early test of the model's
+capabilities.</p>
+<p>In the second subtask, we provide a larger chunk of a city as input, and ask
+the model to fill in buildings in all the empty blocks provided (Figure TODO
+(b)). This task is more difficult, because more buildings must be generated and
+placed within the bounds of blocks. But because we also provide geographic
+features like water and parks in the input, a model can potentially take
+advantage of these semantic cues to generate layouts that are sensitive to
+their surroundings.</p>
+<p>TODO: figure both subtasks</p>
+<h2 id="related-work">Related Work</h2>
+<h3 id="inverse-procedural-modeling-and-shape-learning">Inverse Procedural Modeling <em>and</em> Shape Learning</h3>
+<p>The idea of attempting to learn the parameters of a procedural generation model
+is called <em>inverse procedural modeling</em>. Though this has never been applied to
+city layout generation, it has been explored by several authors in other
+domains.</p>
+<p>Wu et al. (2014) learn a split grammar for facades, preferring shorter
+descriptions as better representations of the grammar \cite{wu2013inverse}.
+Though it does not appear to use machine learning, <em>Inverse Procedural Modeling
+by Automatic Generation of L-Systems</em> (2010) propose an approach for
+reverse-engineering the parameters for an L-system (grammar) given input (in
+their case, 2D vector images) that was generated from one
+\cite{vst2010inverse}.</p>
+<p>Other authors have used graphical models to learn how to generate shapes and
+textures. Fan and Wonka (2016) learned a garphical model to generate 3D
+buildings and facades \cite{fan2016probabilistic}. Martinovic and Gool (2013)
+learn a 2D context-free grammar (CFG) from a set of labeled facades. In <em>A
+Probabilistic Model for Component-Based Shape Synthesis</em> (2012)
+\cite{kalogerakis2012probabilistic}, the authors learn a graphical model
+trained on hand-modeled 3D shapes (like a dinosaur or a chair) in order to
+generate their own novel meshes. Toshev et al. (2010) take inspiration from
+classical natural language processing, and learn the parameters of a parsing
+model to map point clouds that represent roofs to a hierarchy of the roof's
+components (e.g., main roof, hood over window, shed roof, etc.)
+\cite{toshev2010detecting}.</p>
+<h3 id="city-modeling">City Modeling</h3>
+<p>Though these works do not use machine learning or inverse procedural
+generation, it is worth briefly touching upon city generation literature.
+Several papers present tools for editing or expanding a set of aerial images of
+cities. Aliaga et al. (2008, a) present a tool for making edits to an urban
+layout and generate roads and parcels to fit into the edited regions
+\cite{aliaga2008interactiveA}. In a followup work <em>(Aglia et al., 2008 b)</em>
+demonstrate another tool that, given an example image, synthesizes a new street
+network, and pastes in segments of the input image that fit well with the new
+road network \cite{aliaga2008interactiveB}.</p>
+<p>Other work focuses on generating cities from scratch. Weber et al. (2009)
+simulate a city's growth over time, taking into account population growth and
+the according land use evolution \cite{weber2009interactive}. In <em>Procedural
+Generation of Parcels in Urban Modeling</em> (2012) \cite{vanegas2012procedural},
+the authors develop an algorithm for automatically splitting blocks (the spaces
+carved out by road networks) into parcels (areas of land ownership). Finally,
+Nishida et al. (2016) present a tool for editing road networks that takes into
+account the style and layout of example data \cite{nishida2016example}.</p>
+<h2 id="dataset-creation">Dataset Creation</h2>
+<p>To the best of our knowledge, no previous work attempt the task of generating
+city layouts using machine learning. Because of this, a significant portion of
+the project time was spent collecting and preprocessing the data. For that
+reason, this section of the report gives a brief overview of this process.</p>
+</body>
+</html>

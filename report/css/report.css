@@ -1,0 +1,98 @@
+@import url(../fonts/cm/serif/cmun-serif.css);
+@import url(../fonts/cm/concrete/cmun-concrete.css);
+@import url(../fonts/cm/typewriter/cmun-typewriter.css);
+@import url(../fonts/fa/css/font-awesome.min.css);
+
+@media (min-width: 800px) {
+    body {
+        margin-left: 200px;
+    }
+}
+
+body {
+    font-family: "Computer Modern Typewriter";
+    max-width: 600px;
+}
+
+body p {
+    font-family: "Computer Modern Serif";
+}
+
+td {
+    vertical-align: top;
+}
+
+.desc {
+    font-style: italic;
+}
+
+img {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    max-width: 100%;
+}
+
+.subtitle {
+    margin-top: -20px;
+    margin-bottom: 50px;
+    font-style: italic;
+    font-size: 10pt;
+}
+
+
+.footnote {
+    font-size: 11pt;
+}
+
+.footnote hr {
+    margin-top: 20px;
+    margin-bottom: 20px;
+    width: 40%;
+}
+
+hr.pretail {
+    margin-top: 40px;
+    margin-bottom: 0px;
+    border-top: 1px solid #2F2F2F;
+    border-bottom: 0px;
+    /* stroke: 1px solid black; */
+}
+
+.tail {
+    font-style: italic;
+    font-size: 10pt;
+    margin-top: 5px;
+    color: #2F2F2F;
+}
+
+table td {
+    padding: 5px;
+}
+
+table th {
+    padding: 5px;
+    color: white;
+    background-color: rgb(112, 112, 112)
+}
+
+tr:nth-child(even) {
+    background-color: #f2f2f2
+}
+
+/* TODO: not first h2. */
+h2 {
+    border-bottom: 1px solid black;
+    margin-top: 100px;
+}
+
+.toc {
+    margin-top: 50px;
+}
+
+.toctitle {
+    font-size: 12pt;
+    font-weight: bold;
+}
