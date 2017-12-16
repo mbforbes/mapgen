@@ -76,16 +76,16 @@ def get_tag_features(tag_el: ET.Element) -> Set[str]:
     key = tag_el.attrib['k']
 
     # new new: any, w/ val
-    # return set([','.join([key, tag_el.attrib['v']])])
+    return set([','.join([key, tag_el.attrib['v']])])
 
     # new: any
     # return set([key])
 
     # old: restrict
-    feature_set = {'building', 'highway', 'water'}
-    if key in feature_set:
-        return set([key])
-    return set()
+    # feature_set = {'building', 'highway', 'water'}
+    # if key in feature_set:
+    #     return set([key])
+    # return set()
 
 
 def nd_to_geo_coords(
@@ -127,15 +127,16 @@ def transform_way(
     return [nd_to_geo_coords(node_map, nd) for nd in nds], [int(nd.attrib['ref']) for nd in nds]
 
 
-def get_color(features: List[str]) -> str:
-    if 'building' in features:
-        return 'brown'
-    if 'highway' in features:
-        return 'yellow'
-    if 'water' in features:
-        return 'blue'
-    if 'source' in features:
-        return 'pink'
+def get_color(features_blobs: List[str]) -> str:
+    for features in features_blobs:
+        if 'building' in features:
+            return 'brown'
+        if 'highway' in features:
+            return 'yellow'
+        if 'water' in features:
+            return 'blue'
+        if 'source' in features:
+            return 'pink'
     return 'lime'
 
 
@@ -505,7 +506,7 @@ def preproc(fn: str) -> Tuple[Dict[int, ET.Element], List[ET.Element], Tuple[flo
 
 def main():
     # parse XML tree and get root
-    fn = 'data/chunk-test-1.osm'
+    fn = 'data/parktest-1.osm'
     node_map, ways, geo_bounds = preproc(fn)
 
     # try to figure out the format

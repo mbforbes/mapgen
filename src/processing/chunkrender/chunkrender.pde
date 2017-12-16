@@ -50,7 +50,21 @@ void drawBuilding(int[][] coords) {
     endShape(CLOSE);
 }
 
-void drawWalkway(int[][] coords) {
+
+void drawPark(int[][] coords) {
+    // TODO: stroke
+    // TODO: any line thickness?
+    // TODO: color
+    fill(0, 255, 0);
+    stroke(0);
+    beginShape();
+    for (int i = 0; i < coords.length; i++) {
+        vertex(coords[i][0], coords[i][1]);
+    }
+    endShape(CLOSE);
+}
+
+void drawWalkarea(int[][] coords) {
     // TODO: stroke
     // TODO: any line thickness?
     // TODO: color
@@ -68,6 +82,18 @@ void drawHighway(int[][] coords) {
     // TODO: line color
     noFill();
     stroke(0);
+    beginShape();
+    for (int i = 0; i < coords.length; i++) {
+        vertex(coords[i][0], coords[i][1]);
+    }
+    endShape();
+}
+
+void drawFootpath(int[][] coords) {
+    // TODO: line thickness
+    // TODO: line color
+    noFill();
+    stroke(255, 0, 255);
     beginShape();
     for (int i = 0; i < coords.length; i++) {
         vertex(coords[i][0], coords[i][1]);
@@ -107,8 +133,14 @@ void handleFile(String in_path, String out_path) {
         if (category.equals("water")) {
             drawWater(coords);
         }
-        if (category.equals("walkway")) {
-            drawWalkway(coords);
+        if (category.equals("walkarea")) {
+            drawWalkarea(coords);
+        }
+        if (category.equals("footpath")) {
+            drawFootpath(coords);
+        }
+        if (category.equals("park")) {
+            drawPark(coords);
         }
     }
 
@@ -118,7 +150,7 @@ void handleFile(String in_path, String out_path) {
 
 void draw() {
     // TODO: loop over files here (if needed) and maybe make more handy
-    String in_path = "/home/max/repos/mapgen/data/chunks/B/chunk-test-1.txt";
+    String in_path = "/home/max/repos/mapgen/data/chunks/B/parktest-1.txt";
     String out_dir = "/home/max/repos/mapgen/data/chunks/B/";
     String out_path = getOutFilename(in_path, out_dir);
 
