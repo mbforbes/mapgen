@@ -1,9 +1,10 @@
 """
 Building "fill in buildings of chunks of city" dataset.
 
-First candidate lat, lon and pixel sizing: * lat:   47.66617 -- 47.67109
-    range = 0.00492 * lon: -122.39438 -- -122.38707  range = 0.00731 * pixels:
-    500 x 500
+First candidate lat, lon and pixel sizing:
+    * lat:   47.66617 -- 47.67109 range = 0.00492
+    * lon: -122.39438 -- -122.38707  range = 0.00731
+    * pixels: 500 x 500
 
 Easiest will be to collect map chunks by letting OpenStreetMaps segment off
 lat, lon chunks by giving them the range (rather than trying to determine how
@@ -153,6 +154,10 @@ def process_file(in_path: str, a_dir: str, b_dir: str, res: Tuple[int, int]) -> 
     # print('Geo features found:')
     # for feat, freq in c.most_common():
     #     print('{} \t {}'.format(freq, feat))
+
+    # if there were 0 buildings, skip this file.
+    if len(building_buffer) == 0:
+        return
 
     # write out. A gets only rest, B gets rest + buildings
     rest_str = rest_buffer_stringify(rest_buffer)
