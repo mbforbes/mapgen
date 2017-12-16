@@ -17,6 +17,7 @@ import graph
 import osm
 import geo
 from geo import Polygon
+import polygon
 from polygon import DiscretePoly
 
 
@@ -80,10 +81,6 @@ def match_buildings_blocks(
 #     buildings: List[DiscretePoly]
 
 
-def poly2str(poly: DiscretePoly) -> str:
-    return ' '.join((','.join((str(coord) for coord in pt)) for pt in poly))
-
-
 def gen_for_file(in_fn: str, out_dir: str, ir_w: int, ir_h: int, res: int) -> None:
     # get filename info to use as prefix
     prefix, _ = os.path.basename(in_fn).split('.')
@@ -111,8 +108,8 @@ def gen_for_file(in_fn: str, out_dir: str, ir_w: int, ir_h: int, res: int) -> No
 
     # write data out so processing can render
     for i, fb in enumerate(fbs):
-        block = poly2str(fb.block)
-        bs = [poly2str(b) for b in fb.buildings]
+        block = polygon.poly2str(fb.block)
+        bs = [polygon.poly2str(b) for b in fb.buildings]
         with open(os.path.join(out_dir, '{}-{}.txt'.format(prefix, str(i))), 'w') as f:
             f.write('\n'.join([block] + bs))
             f.write('\n')

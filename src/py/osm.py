@@ -50,8 +50,6 @@ def get_way_features(way_el: ET.Element) -> Set[str]:
 
 def get_tag_features(tag_el: ET.Element) -> Set[str]:
     """Gets any features that we're considering and returns them.
-
-    TODO: eventually belongs in OSM
     """
     feature_set = {'building', 'highway', 'water'}
     if 'k' not in tag_el.attrib:

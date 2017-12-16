@@ -9,6 +9,10 @@ Poly = List[Point]
 Raster = List[List[str]]
 
 
+def poly2str(poly: DiscretePoly) -> str:
+    return ' '.join((','.join((str(coord) for coord in pt)) for pt in poly))
+
+
 def display_raster(raster: Raster) -> None:
     for row in raster:
         print(' '.join(row))
