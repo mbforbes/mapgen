@@ -363,8 +363,40 @@ image).
 We scrape a region encompassing the greater Seattle area: from the Puget Sound
 (W) to Sammamish (E), and from SeaTac (S) to Mountlake Terrace (N). This
 results in 2967 individual regions, which we filtered to include only those
-with at least one building.
+with at least one building. This left us with 1880 regions, which we
+partitioned into train (1680) / val (100) / test (100) splits.
 
-TODO: final numbers, also MB size, and splits
+## Model
+
+We use the conditional adversarial network, proposed by Isola et al. (2017)
+\cite{isola2017pix2pix}.
+
+This model trains two networks, a generator, and a discriminator. The generator
+produces candidate output images, and the discriminator attempts to distinguish
+between real output images and fake ones. They are trained together so that as
+the generator produces more realistic images, the generator also gets better at
+distinguishing them.
+
+We use the same model presented in the paper, with the parameters set to be the
+same as in the aerial map to topography task.
+
+## Experimental Results and Discussion
+
+For task 1, our model is able to generate fairly convincing blocks filled in
+with buildings.
+
+![task 1](img/task1-epoch1.png)
+
+_Figure TODO: Task 1, epoch 1_
+
+![task 1 e9](img/task1-epoch9.png)
+
+_Figure TODO: Task 1, epoch 9_
+
+![task 1 e191](img/task1-epoch191.png)
+
+_Figure TODO: Task 1, epoch 9_
+
+
 
 [^Processing]: https://processing.org/

@@ -506,7 +506,7 @@ def preproc(fn: str) -> Tuple[Dict[int, ET.Element], List[ET.Element], Tuple[flo
 
 def main():
     # parse XML tree and get root
-    fn = 'data/parktest-1.osm'
+    fn = 'data/chunks/osm/seattle-1001.osm'
     node_map, ways, geo_bounds = preproc(fn)
 
     # try to figure out the format

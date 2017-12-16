@@ -12,16 +12,16 @@ void setup() {
  * Returns:
  * - "/output/baz.png"
  */
-String getOutFilename(String fn, String out_dir) {
-    String[] pieces = split(fn, "/");
-    String basename = pieces[pieces.length - 1];
-    String preExt = split(basename, ".")[0];
-    String middle = "";
-    if (out_dir.charAt(out_dir.length() - 1) != '/') {
-        middle = "/";
-    }
-    return out_dir + middle + preExt + ".png";
-}
+// String getOutFilename(String fn, String out_dir) {
+//     String[] pieces = split(fn, "/");
+//     String basename = pieces[pieces.length - 1];
+//     String preExt = split(basename, ".")[0];
+//     String middle = "";
+//     if (out_dir.charAt(out_dir.length() - 1) != '/') {
+//         middle = "/";
+//     }
+//     return out_dir + middle + preExt + ".png";
+// }
 
 
 int[][] str2vertices(String line) {
@@ -105,6 +105,9 @@ void drawWater(int[][] coords) {
 
 
 void handleFile(String in_path, String out_path) {
+    clear();
+    background(240);
+
     String[] lines = loadStrings(in_path);
     for (int i = 0; i < lines.length; i++) {
         // extract data
@@ -138,12 +141,33 @@ void handleFile(String in_path, String out_path) {
 }
 
 void draw() {
-    // TODO: loop over files here (if needed) and maybe make more handy
-    String in_path = "/home/max/repos/mapgen/data/chunks/A/parktest-1.txt";
-    String out_dir = "/home/max/repos/mapgen/data/chunks/A/";
-    String out_path = getOutFilename(in_path, out_dir);
+    String[] types = { "A", "B" };
+    int[] splitEnds = { 1679, 99, 99 };
+    String[] splits = { "train", "val", "test" };
 
-    handleFile(in_path, out_path);
+    // outer loop goes over A, B
+    for (int type_idx = 0; type_idx < types.length; type_idx++) {
+        String type = types[type_idx];
+
+        // next loop goes over train, val, test
+        for (int split_idx = 0; split_idx < splits.length; split_idx++) {
+            String split = splits[split_idx];
+            int endInclusive = splitEnds[split_idx];
+
+            String in_base = "/home/max/repos/mapgen/data/regions/" + type + "/" + split + "/seattle-" + split + "-";
+            String in_ext = ".txt";
+
+            String out_base = "/home/max/repos/pytorch-CycleGAN-and-pix2pix/datasets/regions/" + type + "/" + split + "/seattle-" + split + "-";
+            String out_ext = ".png";
+
+            // innermost loop goes over individual files
+            for (int i = 0; i <= endInclusive; i++) {
+                String in_path = in_base + str(i) + in_ext;
+                String out_path = out_base + str(i) + out_ext;
+                handleFile(in_path, out_path);
+            }
+        }
+    }
 
     exit();
 }

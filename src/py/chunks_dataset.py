@@ -22,6 +22,9 @@ import os
 import typing
 from typing import List, Tuple, Set, Dict, Optional
 
+# 3rd party
+from tqdm import tqdm
+
 # local
 import geo
 import osm
@@ -71,7 +74,7 @@ def get_category(features: Dict[str, str]) -> Optional[str]:
     # backup: some have very little info
     backup = [
         ('highway', 'highway'),
-        ('source', 'water'),
+        # ('source', 'water'),
     ]
     for key, cat in backup:
         if key in features:
@@ -80,9 +83,8 @@ def get_category(features: Dict[str, str]) -> Optional[str]:
     return None
 
 
-def get_out_path(in_path: str, out_dir: str) -> str:
-    prefix, _ = os.path.basename(in_path).split('.')
-    return os.path.join(out_dir, '{}.txt'.format(prefix))
+def get_out_path(prefix: str, num: int, out_dir: str) -> str:
+    return os.path.join(out_dir, '{}-{}.txt'.format(prefix, num))
 
 
 def rest_buffer_stringify(rest_buffer: Dict[str, List[str]]) -> str:
@@ -98,7 +100,9 @@ def rest_buffer_stringify(rest_buffer: Dict[str, List[str]]) -> str:
     return '\n'.join(ordered_rest)
 
 
-def process_file(in_path: str, a_dir: str, b_dir: str, res: Tuple[int, int]) -> None:
+def process_file(
+        in_path: str, a_dir: str, b_dir: str, res: Tuple[int, int],
+        prefix: str, num: int) -> bool:
     """
     want:
     - list of ways. for each way:
@@ -157,21 +161,39 @@ def process_file(in_path: str, a_dir: str, b_dir: str, res: Tuple[int, int]) -> 
 
     # if there were 0 buildings, skip this file.
     if len(building_buffer) == 0:
-        return
+        # print('Skipping {} (0 buildings found)'.format(in_path))
+        return False
 
     # write out. A gets only rest, B gets rest + buildings
+    # print('Writing with {}'.format(in_path))
     rest_str = rest_buffer_stringify(rest_buffer)
-    with open(get_out_path(in_path, a_dir), 'w') as f:
+    with open(get_out_path(prefix, num, a_dir), 'w') as f:
         f.write(rest_str)
-    with open(get_out_path(in_path, b_dir), 'w') as f:
+    with open(get_out_path(prefix, num, b_dir), 'w') as f:
         f.write(rest_str)
         f.write('\n'.join(building_buffer))
         f.write('\n')
+    return True
 
 
 def main():
-    # tmp: see how well we're doing
-    process_file('data/parktest-1.osm', 'data/chunks/A/', 'data/chunks/B/', (500, 500))
+    # settings
+    input_range_inclusive = 2966
+    out_idx = 0
+
+    for trial_idx in tqdm(range(input_range_inclusive + 1)):
+        # try processing it
+        success = process_file(
+            'data/chunks/osm/seattle-{}.osm'.format(trial_idx),
+            'data/chunks/A/',
+            'data/chunks/B/',
+            (500, 500),
+            'seattle',
+            out_idx)
+
+        # increase idx if it worked (i.e., > 0 buildings)
+        if success:
+            out_idx += 1
 
 
 if __name__ == '__main__':
