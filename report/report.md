@@ -13,11 +13,11 @@ environments with far less time and effort than manual modeling.
 
 The domain of _urban_ procedural generation can be roughly split into three
 sub-problems: layout modelling (maps and roads), building modelling (3D
-geometries), and facade modelling (3D facades and textures)
-\cite{vanegas2010modelling}. Exciting advances in all of these areas have led
-to remarkably realistic results, such as generating cities that expand over
-time \cite{weber2009interactive} and villages that grow based on their
-geography \cite{emilien2012procedural}.
+geometries), and facade modelling (3D facades and
+textures).[^vanegas2010modelling] Exciting advances in all of these areas have
+led to remarkably realistic results, such as generating cities that expand over
+time[^weber2009interactive] and villages that grow based on their
+geography.[^emilien2012procedural]
 
 While procedural generation offers great gains compared to manually creating
 content, a key problem still exists: the designers of such generation systems
@@ -77,25 +77,24 @@ city layout generation, it has been explored by several authors in other
 domains.
 
 Wu et al. (2014) learn a split grammar for facades, preferring shorter
-descriptions as better representations of the grammar \cite{wu2013inverse}.
-Though it does not appear to use machine learning, _Inverse Procedural Modeling
-by Automatic Generation of L-Systems_ (2010) propose an approach for
+descriptions as better representations of the grammar.[^wu2013inverse] Though
+it does not appear to use machine learning, _Inverse Procedural Modeling by
+Automatic Generation of L-Systems_ (2010) propose an approach for
 reverse-engineering the parameters for an L-system (grammar) given input (in
-their case, 2D vector images) that was generated from one
-\cite{vst2010inverse}.
+their case, 2D vector images) that was generated from one.[^vst2010inverse]
 
 Other authors have used graphical models to learn how to generate shapes and
 textures. Fan and Wonka (2016) learned a garphical model to generate 3D
-buildings and facades \cite{fan2016probabilistic}. Martinovic and Gool (2013)
-learn a 2D context-free grammar (CFG) from a set of labeled facades. In _A
-Probabilistic Model for Component-Based Shape Synthesis_ (2012)
-\cite{kalogerakis2012probabilistic}, the authors learn a graphical model
-trained on hand-modeled 3D shapes (like a dinosaur or a chair) in order to
-generate their own novel meshes. Toshev et al. (2010) take inspiration from
-classical natural language processing, and learn the parameters of a parsing
-model to map point clouds that represent roofs to a hierarchy of the roof's
-components (e.g., main roof, hood over window, shed roof, etc.)
-\cite{toshev2010detecting}.
+buildings and facades.[^fan2016probabilistic] Martinovic and Gool (2013) learn
+a 2D context-free grammar (CFG) from a set of labeled
+facades.[^martinovic2013bayesian] In _A Probabilistic Model for Component-Based
+Shape Synthesis_ (2012), the authors learn a graphical model trained on
+hand-modeled 3D shapes (like a dinosaur or a chair) in order to generate their
+own novel meshes.[^kalogerakis2012probabilistic] Toshev et al. (2010) take
+inspiration from classical natural language processing, and learn the
+parameters of a parsing model to map point clouds that represent roofs to a
+hierarchy of the roof's components (e.g., main roof, hood over window, shed
+roof, etc.) [^toshev2010detecting].
 
 ### City Modeling
 
@@ -103,20 +102,20 @@ Though these works do not use machine learning or inverse procedural
 generation, it is worth briefly touching upon city generation literature.
 Several papers present tools for editing or expanding a set of aerial images of
 cities. Aliaga et al. (2008, a) present a tool for making edits to an urban
-layout and generate roads and parcels to fit into the edited regions
-\cite{aliaga2008interactiveA}. In a followup work _(Aglia et al., 2008 b)_
+layout and generate roads and parcels to fit into the edited
+regions.[^aliaga2008interactiveA] In a followup work, Aglia et al. _(2008, b)_
 demonstrate another tool that, given an example image, synthesizes a new street
 network, and pastes in segments of the input image that fit well with the new
-road network \cite{aliaga2008interactiveB}.
+road network [^aliaga2008interactiveB].
 
 Other work focuses on generating cities from scratch. Weber et al. (2009)
 simulate a city's growth over time, taking into account population growth and
-the according land use evolution \cite{weber2009interactive}. In _Procedural
-Generation of Parcels in Urban Modeling_ (2012) \cite{vanegas2012procedural},
-the authors develop an algorithm for automatically splitting blocks (the spaces
-carved out by road networks) into parcels (areas of land ownership). Finally,
-Nishida et al. (2016) present a tool for editing road networks that takes into
-account the style and layout of example data \cite{nishida2016example}.
+the according land use evolution.[^weber2009interactive] In _Procedural
+Generation of Parcels in Urban Modeling_ (2012), the authors develop an
+algorithm for automatically splitting blocks (the spaces carved out by road
+networks) into parcels (areas of land ownership).[^vanegas2012procedural]
+Finally, Nishida et al. (2016) present a tool for editing road networks that
+takes into account the style and layout of example data.[^nishida2016example]
 
 ## Dataset Creation
 
@@ -362,14 +361,14 @@ image).
 
 We scrape a region encompassing the greater Seattle area: from the Puget Sound
 (W) to Sammamish (E), and from SeaTac (S) to Mountlake Terrace (N). This
-results in 2967 individual regions, which we filtered to include only those
-with at least one building. This left us with 1880 regions, which we
-partitioned into train (1680) / val (100) / test (100) splits.
+results in 2967 individual regions, which we filter to include only those with
+at least one building. After filtering, 1880 regions remain, which we partition
+into train (1680) / val (100) / test (100) splits.
 
 ## Model
 
-We use the conditional adversarial network, proposed by Isola et al. (2017)
-\cite{isola2017pix2pix}.
+We use the conditional adversarial network, proposed by Isola et al.
+(2017).[^pix2pix]
 
 This model trains two networks, a generator, and a discriminator. The generator
 produces candidate output images, and the discriminator attempts to distinguish
@@ -398,5 +397,64 @@ _Figure TODO: Task 1, epoch 9_
 _Figure TODO: Task 1, epoch 9_
 
 
+[^vanegas2010modelling]: Carlos A Vanegas, Daniel G Aliaga, Peter Wonka, Pascal
+Müller, Paul Waddell, and Benjamin Watson. _Modelling the appearance and
+behaviour of urban spaces._ In Computer Graphics Forum, volume 29, pages 25–42.
+Wiley Online Library, 2010.
+
+[^weber2009interactive]: Basil Weber, Pascal Mu ̈ller, Peter Wonka, and Markus
+Gross. _Interactive geometric simulation of 4d cities._ In Computer Graphics
+Forum, volume 28, pages 481–492. Wiley Online Library, 2009.
+
+[^emilien2012procedural]: Arnaud Emilien, Adrien Bernhardt, Adrien Peytavie,
+Marie-Paule Cani, and Eric Galin. _Procedural generation of villages on
+arbitrary terrains._ The Visual Computer, 28(6-8):809– 818, 2012.
+
+[^wu2013inverse]: Fuzhang Wu, Dong-Ming Yan, Weiming Dong, Xiaopeng Zhang, and
+Peter Wonka. _Inverse procedural modeling of facade layouts._ arXiv preprint
+arXiv:1308.0419, 2013.
+
+[^vst2010inverse]: Ondrej Sˇt’ava, Bedrich Beneˇs, Radomir Mˇech, Daniel G
+Aliaga, and Peter Kriˇstof. _Inverse procedural modeling by automatic
+generation of l-systems._ In Computer Graphics Forum, volume 29, pages 665–674.
+Wiley Online Library, 2010.
+
+[^fan2016probabilistic]: Lubin Fan and Peter Wonka. _A probabilistic model for
+exteriors of residential buildings._ ACM Transactions on Graphics (TOG),
+35(5):155, 2016.
+
+[^martinovic2013bayesian]: Andelo Martinovic and Luc Van Gool. _Bayesian
+grammar learning for inverse procedural modeling._ In Proceedings of the IEEE
+Conference on Computer Vision and Pattern Recognition, pages 201–208, 2013.
+
+[^kalogerakis2012probabilistic]: Evangelos Kalogerakis, Siddhartha Chaudhuri,
+Daphne Koller, and Vladlen Koltun. _A probabilistic model for component-based
+shape synthesis._ ACM Transactions on Graphics (TOG), 31(4):55, 2012.
+
+[^toshev2010detecting]: Alexander Toshev, Philippos Mordohai, and Ben Taskar.
+_Detecting and parsing architecture at city scale from range data._ In Computer
+Vision and Pattern Recognition (CVPR), 2010 IEEE Conference on, pages 398–405.
+IEEE, 2010.
+
+[^aliaga2008interactiveA]: Daniel G Aliaga, Bedˇrich Beneˇs, Carlos A Vanegas,
+and Nathan Andrysco. _Interactive reconfiguration of urban layouts._ IEEE
+Computer Graphics and Applications, 28(3), 2008.
+
+[^aliaga2008interactiveB]: Daniel G Aliaga, Carlos A Vanegas, and Bedrich
+Benes. _Interactive example-based urban layout synthesis._ In ACM transactions
+on graphics (TOG), volume 27, page 160. ACM, 2008.
+
+[^vanegas2012procedural]: Carlos A Vanegas, Tom Kelly, Basil Weber, Jan
+Halatsch, Daniel G Aliaga, and Pascal Müller. _Procedural generation of parcels
+in urban modeling._ In Computer graphics forum, volume 31, pages 681–690. Wiley
+Online Library, 2012.
+
+[^nishida2016example]: Gen Nishida, Ignacio Garcia-Dorado, and Daniel G Aliaga.
+_Example-driven procedural urban roads._ In Computer Graphics Forum, volume 35,
+pages 5–17. Wiley Online Library, 2016.
+
+[^pix2pix]: Philip Isola, Jun-Yan Zhu, Tinghui Zhou, and Alexei A. Efros.
+_Image-to-image translation with conditional adversarial networks._ In CVPR,
+2017.
 
 [^Processing]: https://processing.org/
