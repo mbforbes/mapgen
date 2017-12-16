@@ -1,6 +1,6 @@
 void setup() {
     size(500, 500);
-    background(255);
+    background(240);
     noLoop();
 }
 
@@ -38,11 +38,9 @@ int[][] str2vertices(String line) {
 }
 
 void drawBuilding(int[][] coords) {
-    // TODO: stroke
-    // TODO: any line thickness?
-    // TODO: color
-    fill(255, 0, 0);
-    stroke(0);
+    // TODO: any stroke?
+    fill(178, 24, 43);
+    strokeWeight(0);
     beginShape();
     for (int i = 0; i < coords.length; i++) {
         vertex(coords[i][0], coords[i][1]);
@@ -52,11 +50,8 @@ void drawBuilding(int[][] coords) {
 
 
 void drawPark(int[][] coords) {
-    // TODO: stroke
-    // TODO: any line thickness?
-    // TODO: color
-    fill(0, 255, 0);
-    stroke(0);
+    fill(153, 213, 148);
+    stroke(153, 213, 148);
     beginShape();
     for (int i = 0; i < coords.length; i++) {
         vertex(coords[i][0], coords[i][1]);
@@ -65,11 +60,9 @@ void drawPark(int[][] coords) {
 }
 
 void drawWalkarea(int[][] coords) {
-    // TODO: stroke
-    // TODO: any line thickness?
-    // TODO: color
+    // TODO: maybe change color and stroke
     fill(200);
-    stroke(0);
+    stroke(200);
     beginShape();
     for (int i = 0; i < coords.length; i++) {
         vertex(coords[i][0], coords[i][1]);
@@ -78,10 +71,9 @@ void drawWalkarea(int[][] coords) {
 }
 
 void drawHighway(int[][] coords) {
-    // TODO: line thickness
-    // TODO: line color
     noFill();
-    stroke(0);
+    stroke(254, 224, 139);
+    strokeWeight(4);
     beginShape();
     for (int i = 0; i < coords.length; i++) {
         vertex(coords[i][0], coords[i][1]);
@@ -90,10 +82,10 @@ void drawHighway(int[][] coords) {
 }
 
 void drawFootpath(int[][] coords) {
-    // TODO: line thickness
     // TODO: line color
     noFill();
-    stroke(255, 0, 255);
+    stroke(200, 200, 200);
+    strokeWeight(2);
     beginShape();
     for (int i = 0; i < coords.length; i++) {
         vertex(coords[i][0], coords[i][1]);
@@ -102,11 +94,8 @@ void drawFootpath(int[][] coords) {
 }
 
 void drawWater(int[][] coords) {
-    // TODO: stroke
-    // TODO: any line thickness?
-    // TODO: color
-    fill(0, 0, 255);
-    stroke(0);
+    fill(50, 136, 189);
+    stroke(50, 136, 189);
     beginShape();
     for (int i = 0; i < coords.length; i++) {
         vertex(coords[i][0], coords[i][1]);
@@ -150,8 +139,8 @@ void handleFile(String in_path, String out_path) {
 
 void draw() {
     // TODO: loop over files here (if needed) and maybe make more handy
-    String in_path = "/home/max/repos/mapgen/data/chunks/B/parktest-1.txt";
-    String out_dir = "/home/max/repos/mapgen/data/chunks/B/";
+    String in_path = "/home/max/repos/mapgen/data/chunks/A/parktest-1.txt";
+    String out_dir = "/home/max/repos/mapgen/data/chunks/A/";
     String out_path = getOutFilename(in_path, out_dir);
 
     handleFile(in_path, out_path);
