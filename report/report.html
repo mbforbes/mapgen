@@ -38,6 +38,7 @@
 </li>
 <li><a href="#model">Model</a></li>
 <li><a href="#experimental-results-and-discussion">Experimental Results and Discussion</a></li>
+<li><a href="#conclusion">Conclusion</a></li>
 </ul>
 </div>
 <h2 id="introduction">Introduction</h2>
@@ -374,9 +375,9 @@ geographic region by fixed window sizes (chosen to render well onto a square
 image).</p>
 <p>We scrape a region encompassing the greater Seattle area: from the Puget Sound
 (W) to Sammamish (E), and from SeaTac (S) to Mountlake Terrace (N). This
-results in 2967 individual regions, which we filtered to include only those
-with at least one building. This left us with 1880 regions, which we
-partitioned into train (1680) / val (100) / test (100) splits.</p>
+results in 2967 individual regions, which we filter to include only those with
+at least one building. After filtering, 1880 regions remain, which we partition
+into train (1680) / val (100) / test (100) splits.</p>
 <h2 id="model">Model</h2>
 <p>We use the conditional adversarial network, proposed by Isola et al.
 (2017).<sup id="fnref:pix2pix"><a class="footnote-ref" href="#fn:pix2pix" rel="footnote">14</a></sup></p>
@@ -396,6 +397,34 @@ with buildings.</p>
 <p><em>Figure TODO: Task 1, epoch 9</em></p>
 <p><img alt="task 1 e191" src="img/task1-epoch191.png" /></p>
 <p><em>Figure TODO: Task 1, epoch 9</em></p>
+<h2 id="conclusion">Conclusion</h2>
+<p>We presented what is, to our knowledge, the first attempt to generate urban
+city layouts using machine learning. We collected two "fill in the buildings"
+datasets by generating custom renderings from geographic data. We showed that
+conditional adversarial network models perform surprisingly well on both tasks,
+often producing plausible results even in the absence of truly sufficient
+information. Our code is open source,<sup id="fnref:githubmapgen"><a class="footnote-ref" href="#fn:githubmapgen" rel="footnote">16</a></sup> and we would happily make
+the data available as well upon request.</p>
+<p>In the future, we are eager to explore two lines of work. The first natrual
+extension is to improve the current approach. More exhaustive feature mapping
+would allow us to more completely capture inconsistently labeled regions like
+parks and waterways, and finer grained feature rendering would allow us to
+differentiate more <em>waypoint</em> types, such as freeways, arterials, and side
+streets. Modifying the model to account for task-specific constraints---such as
+that buildings have straight edges and are closed polygons---would produce even
+more realistic results. And of course, the current approach provides the road
+network as input; an even greater challenge would be to generate the roads as
+well (though this would likely move beyond the limits of the current model).</p>
+<p>Even more exciting to us is the second line of future work, which is to learn
+models inspired by traditional approaches to procedural map generation:
+probabilistic grammars. While this approach would be less likely to produce
+visually impressive results as quickly as the current model, it would stay more
+true to the intent of procedural generation, which is to create systems that
+<em>grow</em> rather than <em>fill in</em>. Unsupervised grammar induction, while daunting,
+has precedent in natural language processing. Grammar learning would also
+transfer more easily to generating other features (roads, water, parks) than
+would the model proposed in this paper.</p>
+<p><br /></p>
 <div class="footnote">
 <hr />
 <ol>
@@ -475,6 +504,9 @@ pages 5–17. Wiley Online Library, 2016.&#160;<a class="footnote-backref" href=
 </li>
 <li id="fn:Processing">
 <p>https://processing.org/&#160;<a class="footnote-backref" href="#fnref:Processing" rev="footnote" title="Jump back to footnote 15 in the text">&#8617;</a></p>
+</li>
+<li id="fn:githubmapgen">
+<p>https://github.com/mbforbes/mapgen&#160;<a class="footnote-backref" href="#fnref:githubmapgen" rev="footnote" title="Jump back to footnote 16 in the text">&#8617;</a></p>
 </li>
 </ol>
 </div>

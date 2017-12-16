@@ -396,6 +396,38 @@ _Figure TODO: Task 1, epoch 9_
 
 _Figure TODO: Task 1, epoch 9_
 
+## Conclusion
+
+We presented what is, to our knowledge, the first attempt to generate urban
+city layouts using machine learning. We collected two "fill in the buildings"
+datasets by generating custom renderings from geographic data. We showed that
+conditional adversarial network models perform surprisingly well on both tasks,
+often producing plausible results even in the absence of truly sufficient
+information. Our code is open source,[^githubmapgen] and we would happily make
+the data available as well upon request.
+
+In the future, we are eager to explore two lines of work. The first natrual
+extension is to improve the current approach. More exhaustive feature mapping
+would allow us to more completely capture inconsistently labeled regions like
+parks and waterways, and finer grained feature rendering would allow us to
+differentiate more _waypoint_ types, such as freeways, arterials, and side
+streets. Modifying the model to account for task-specific constraints---such as
+that buildings have straight edges and are closed polygons---would produce even
+more realistic results. And of course, the current approach provides the road
+network as input; an even greater challenge would be to generate the roads as
+well (though this would likely move beyond the limits of the current model).
+
+Even more exciting to us is the second line of future work, which is to learn
+models inspired by traditional approaches to procedural map generation:
+probabilistic grammars. While this approach would be less likely to produce
+visually impressive results as quickly as the current model, it would stay more
+true to the intent of procedural generation, which is to create systems that
+_grow_ rather than _fill in_. Unsupervised grammar induction, while daunting,
+has precedent in natural language processing. Grammar learning would also
+transfer more easily to generating other features (roads, water, parks) than
+would the model proposed in this paper.
+
+<br />
 
 [^vanegas2010modelling]: Carlos A Vanegas, Daniel G Aliaga, Peter Wonka, Pascal
 Müller, Paul Waddell, and Benjamin Watson. _Modelling the appearance and
@@ -458,3 +490,5 @@ _Image-to-image translation with conditional adversarial networks._ In CVPR,
 2017.
 
 [^Processing]: https://processing.org/
+
+[^githubmapgen]: https://github.com/mbforbes/mapgen
