@@ -31,13 +31,20 @@
 </li>
 <li><a href="#task-2-map-regions">Task 2: Map Regions</a><ul>
 <li><a href="#rendering-regions">Rendering Regions</a></li>
-</ul>
-</li>
 <li><a href="#scraping">Scraping</a></li>
 </ul>
 </li>
+</ul>
+</li>
 <li><a href="#model">Model</a></li>
-<li><a href="#experimental-results-and-discussion">Experimental Results and Discussion</a></li>
+<li><a href="#experimental-results-and-discussion">Experimental Results and Discussion</a><ul>
+<li><a href="#task-1">Task 1</a><ul>
+<li><a href="#mode-collapse">Mode collapse</a></li>
+</ul>
+</li>
+<li><a href="#task-2">Task 2</a></li>
+</ul>
+</li>
 <li><a href="#conclusion">Conclusion</a></li>
 </ul>
 </div>
@@ -77,20 +84,29 @@ generating the layout for a city. Within this domain, we further restrict our
 focus to the following task: given a road network and city features (like water
 and parks), fill in the buildings inside of blocks. Figure TODO shows a visual
 depiction of our task.</p>
-<p>TODO: figure for task</p>
+<p><br /></p>
+<p><img alt="dataset fig 1" src="img/task_overview.png" /></p>
+<p><em>Figure TODO: Task overview: given a road network, we attempt to directly fill
+in blocks with buildings.</em></p>
+<p><br /></p>
 <p>We split this overall task into two subtasks. In the first subtask, we extract
 individual blocks with their buildings laid out on top of them. The goal is to
-generate the buildings for a single block at a time (Figure TODO (a)). This
-problem is more constrained, and provides an early test of the model's
+generate the buildings for a single block at a time (Figure TODO, upper half).
+This problem is more constrained, and provides an early test of the model's
 capabilities.</p>
 <p>In the second subtask, we provide a larger chunk of a city as input, and ask
-the model to fill in buildings in all the empty blocks provided (Figure TODO
-(b)). This task is more difficult, because more buildings must be generated and
-placed within the bounds of blocks. But because we also provide geographic
-features like water and parks in the input, a model can potentially take
-advantage of these semantic cues to generate layouts that are sensitive to
+the model to fill in buildings in all the empty blocks provided (Figure TODO,
+lower half). This task is more difficult, because more buildings must be
+generated and placed within the bounds of blocks. But because we also provide
+geographic features like water and parks in the input, a model can potentially
+take advantage of these semantic cues to generate layouts that are sensitive to
 their surroundings.</p>
-<p>TODO: figure both subtasks</p>
+<p><br /></p>
+<p><img alt="2 tasks" src="img/2tasks.png" /></p>
+<p><em>Figure TODO: The two tasks we consider. In both cases, buildings must be
+generated on top of an input image. The difference is in the size of the region
+and the amount of geographic context provided.</em></p>
+<p><br /></p>
 <h2 id="related-work">Related Work</h2>
 <h3 id="inverse-procedural-modeling-and-shape-learning">Inverse Procedural Modeling <em>and</em> Shape Learning</h3>
 <p>The idea of attempting to learn the parameters of a procedural generation model
@@ -114,7 +130,7 @@ own novel meshes.<sup id="fnref:kalogerakis2012probabilistic"><a class="footnote
 inspiration from classical natural language processing, and learn the
 parameters of a parsing model to map point clouds that represent roofs to a
 hierarchy of the roof's components (e.g., main roof, hood over window, shed
-roof, etc.) <sup id="fnref:toshev2010detecting"><a class="footnote-ref" href="#fn:toshev2010detecting" rel="footnote">9</a></sup>.</p>
+roof, etc.).<sup id="fnref:toshev2010detecting"><a class="footnote-ref" href="#fn:toshev2010detecting" rel="footnote">9</a></sup></p>
 <h3 id="city-modeling">City Modeling</h3>
 <p>Though these works do not use machine learning or inverse procedural
 generation, it is worth briefly touching upon city generation literature.
@@ -301,12 +317,17 @@ concavities in the blocks).</p>
 <p>Finally, we pick a standard resolution, and transform all blocks and the
 buildings on top of them to that fixed resolution output. We the use
 Processing[^processing] to render all of the blocks in bulk, creating pairs of
-(empty, populated) blocks, rendering blocks in grey and buildings in black. A
-few example blocks are shown below in Figure TODO.</p>
+(empty, populated) blocks, rendering blocks in grey and buildings in black.
+Several example blocks are shown below in Figure TODO.</p>
 <p><br /></p>
 <p><img alt="example blocks" src="img/example_blocks.png" /></p>
-<p><em>Figure TODO: Three examples from the dataset for task 1: generating buildings
-for a block.</em></p>
+<p><em>Figure TODO: Four examples from the dataset for task 1: generating buildings
+for a block. Whereas some blocks have distinct shapes around which buildings
+must be placed (columns one and two), others provide almost no input but
+require specific outputs (columns three and four). Currently, uniform scaling
+per block results in a distorted appearance; this effect could be reversed in
+postprocessing, or future approaches could clip blocks to geographic bounds
+rather than scaling to a set pixel size.</em></p>
 <p><br /></p>
 <p>We scrape five different regions of Seattle and extract all blocks with at
 least one building on them, giving a total of 1100 images, which we partition
@@ -362,12 +383,18 @@ we end up with seven possible semantic categories per map that we render: (1)
 nothing (light grey) (blocks are colored this way), (2) buildings (red
 polygons), (3) roads (yellow lines), (4) water (blue polygons), (5) pedestrian
 areas (darker grey polygons), (6) pedestrian walkways (darker grey lines), (7)
-parks (green polygons). Two example renderings are shown below in Figure TODO:</p>
+parks (green polygons). Four example renderings are shown below in Figure TODO:</p>
 <p><br /></p>
 <p><img alt="example regions" src="img/example_regions.png" /></p>
-<p><em>Figure TODO: Two example regions in the dataset for task 2.</em></p>
+<p><em>Figure TODO: Four example regions in the dataset for task 2. The dataset
+exhibits a wide variety in the correct number of buildings in the output, as
+can be seen by the second column, which should be left mostly blank.
+Furthermore, note the presence of pedestrian footpaths around which buildings
+should not be generated (left and rightmost columns), the presence of buildings
+along the pier (third column), and the variety of block shapes around which
+buildings must be placed (columns one versus four).</em></p>
 <p><br /></p>
-<h3 id="scraping">Scraping</h3>
+<h4 id="scraping">Scraping</h4>
 <p>The only additional complication with rendering larger map segments is that the
 amount of map data required is significantly greater. We address this by
 building a small scraping pipeline that walks a given latitude, longitude
@@ -386,17 +413,71 @@ produces candidate output images, and the discriminator attempts to distinguish
 between real output images and fake ones. They are trained together so that as
 the generator produces more realistic images, the generator also gets better at
 distinguishing them.</p>
-<p>We use the same model presented in the paper, with the parameters set to be the
-same as in the aerial map to topography task.</p>
+<p>We use the same model presented in the paper by Isola et al., in which many
+more details can be found. We briefly note here that GAN (generative
+adversarial network) variants are notoriously difficult to train for two
+reasons. The first is that they require a careful balance between the generator
+and discriminator; if the discriminator is too effective, the generator can
+never fool it, and receives no training signal, while the reverse is true if
+the discriminator is easily tricked. The second is the problem of "mode
+collapse," which happens when the generator finds a single output that the
+discriminator believes, and simply produces that identical output continuously.
+The second issue is less prevalent in conditional GANs, because the
+discriminator also receives the input; however, in our particular dataset, many
+inputs look identical, especially for the first task (there are many uniform
+grey squares as input).</p>
 <h2 id="experimental-results-and-discussion">Experimental Results and Discussion</h2>
-<p>For task 1, our model is able to generate fairly convincing blocks filled in
-with buildings.</p>
+<h3 id="task-1">Task 1</h3>
+<p>At the beginning of training, the model has trouble producing coherent shapes,
+and has not yet learned that it should only output one of three color values.
+This can be seen in Figure TODO, with the multicolor banding on the right side
+of the image. It is able to immediately learn to reproduce the grey outline of
+the input block, and never draws black (buildings) on top of white (empty
+space).</p>
+<p><br /></p>
 <p><img alt="task 1" src="img/task1-epoch1.png" /></p>
-<p><em>Figure TODO: Task 1, epoch 1</em></p>
+<p><em>Figure TODO: Task 1, after 1 epoch (pass over training data).</em></p>
+<p><br /></p>
+<p>After nine epochs, the model is able to produce more ambitious shapes (Figure
+TODO), but the shapes are too densely connected and rounded to be convincing
+enough to fool a human judge.</p>
+<p><br /></p>
 <p><img alt="task 1 e9" src="img/task1-epoch9.png" /></p>
-<p><em>Figure TODO: Task 1, epoch 9</em></p>
-<p><img alt="task 1 e191" src="img/task1-epoch191.png" /></p>
-<p><em>Figure TODO: Task 1, epoch 9</em></p>
+<p><em>Figure TODO: Task 1, after 9 epochs.</em></p>
+<p><br /></p>
+<p>By the the end of training model is able to generate fairly convincing
+filled-in blocks. It is interesting to note that the L1 loss does not drop
+after about ten epochs, but the visual quality continues to improve. This can
+be understood by looking at one of the final outputs, in Figure TODO. Without
+the gold output (far right), it would be difficult to tell whether the
+generation (middle) is correct. In that sense, it may well fool a
+discriminator, human or neural network. However, the L1 distance from the
+generated image to the gold is terrible, as it got the buildings almost
+completely wrong.</p>
+<p><br /></p>
+<p><img alt="task 1 e193" src="img/task1-epoch193.png" /></p>
+<p><em>Figure TODO: Task 1, after 193 epochs. (The model was trained for 200 epochs
+in total.)</em></p>
+<p><br /></p>
+<h4 id="mode-collapse">Mode collapse</h4>
+<p>One question we were interested to investigate is: does the conditional
+adversarial network suffer from mode collapse in this task?</p>
+<p>During the middle of training, we observed what appeared to be mode collapse,
+as can be seen in Figure TODO. The model repeatedly generates a single building
+near the bottom of the image.</p>
+<p><br /></p>
+<p><img alt="task 1 possible mode collapse" src="img/task1_mode_collapse.png" /></p>
+<p><em>Figure TODO: Task 1, experiencing possible mode collapse at a handful of earlier
+epochs.</em></p>
+<p><br /></p>
+<p>Though this effect is understandable given the potential confounding inputs
+(all grey boxes), the model exits this behavior after more training. We would
+be interested in disentangling what aspect of the training helped remedy
+this---was it the optimization method? The discriminator "catching up" to the
+mode? Or simply the L1 loss?—but we would need to conduct ablations and
+further model analysis to propose an answer to this question.</p>
+<h3 id="task-2">Task 2</h3>
+<p>TODO</p>
 <h2 id="conclusion">Conclusion</h2>
 <p>We presented what is, to our knowledge, the first attempt to generate urban
 city layouts using machine learning. We collected two "fill in the buildings"
