@@ -138,11 +138,6 @@ def process_file(in_path: str, a_dir: str, b_dir: str, res: Tuple[int, int]) -> 
             pixel_bounds,
             way_geo)
 
-        # TODO: maybe try not flipping y
-
-        # TODO: see if we need to clamp pixels to range (processing might
-        # handle w/ out-of-domain renders just not being visible)
-
         # get out representation
         line = '{};{}'.format(
             category,
@@ -155,9 +150,9 @@ def process_file(in_path: str, a_dir: str, b_dir: str, res: Tuple[int, int]) -> 
             rest_buffer[category].append(line)
 
     # debug output
-    print('Geo features found:')
-    for feat, freq in c.most_common():
-        print('{} \t {}'.format(freq, feat))
+    # print('Geo features found:')
+    # for feat, freq in c.most_common():
+    #     print('{} \t {}'.format(freq, feat))
 
     # write out. A gets only rest, B gets rest + buildings
     rest_str = rest_buffer_stringify(rest_buffer)
