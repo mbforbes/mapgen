@@ -431,7 +431,7 @@ space).
 
 <br />
 
-![task 1](img/task1-epoch1.png)
+![task 1 epoch 1](img/task1-epoch1.png)
 
 _Figure TODO: Task 1, after 1 epoch (pass over training data)._
 
@@ -443,7 +443,7 @@ enough to fool a human judge.
 
 <br />
 
-![task 1 e9](img/task1-epoch9.png)
+![task 1 epoch 9](img/task1-epoch9.png)
 
 _Figure TODO: Task 1, after 9 epochs._
 
@@ -461,7 +461,7 @@ completely wrong.
 
 <br />
 
-![task 1 e193](img/task1-epoch193.png)
+![task 1 epoch 193](img/task1-epoch193.png)
 
 _Figure TODO: Task 1, after 193 epochs. (The model was trained for 200 epochs
 in total.)_
@@ -495,7 +495,108 @@ further model analysis to propose an answer to this question.
 
 ### Task 2
 
-TODO
+Similar to with task 1, the model is able to pick up on copying general
+background shapes over to the output by the end of epoch 1, though the results
+are fuzzy, and it has trouble producing buildings (Figure TODO).
+
+<br />
+
+![task 2 epoch 1](img/task2-epoch1.png)
+
+_Figure TODO: Task 2, after 1 epoch._
+
+<br />
+
+By a few dozen epochs in, the model faithfully copies over the non-building
+context, and generates buildings in largely the appropriate places. However, at
+this point it prefers larger blobs in as many spots as possible, producing cellular-looking outputs that are easily recognized as fake (Figure TODO).
+
+<br />
+
+![task 2 epoch 44](img/task2-epoch44.png)
+
+_Figure TODO: Task 2, after 44 epochs._
+
+<br />
+
+By the end of training, the model has reached generally decent performance on
+many of the inputs. Figure TODO shows the model after its final 200th epoch of
+training, generating a remarkably faithful output compared to the gold.
+
+<br />
+
+![task 2 epoch 200](img/task2-epoch200.png)
+
+_Figure TODO: Task 2, the final model after 200 epochs._
+
+<br />
+
+#### Success cases
+
+There are a few cases that the model can handle very well, shown in the three
+rows in Figure TODO. The first row demonstrates the situation where the model
+excels the most: in regular, dense, suburban grids. This is likely due to the
+large quantity of similarly structured examples in the training set, as well as
+the uniformity of the output being both regular (for the model) and difficult
+for human eyes to distinguish (for subjective quality).
+
+The second row shows a geographic pattern the model has learned: near parks,
+there are few buildings. The buildings that exist near parks are also rarely on
+the parks themselves (with rare exceptions being visitor centers).
+
+The third row shows a seemingly trivial but interesting pattern the model has
+learned: that buildings do not go between freeway roads.
+
+<br />
+
+![task 2 successes](img/task2-successes.png)
+
+_Figure TODO: Task 2, three patterns the model has learned to reproduce well._
+
+<br />
+
+#### Failure cases
+
+The model is of course not without its shortcomings. Figure TODO illustrates
+two of the main problems that plague the model even after it is fully trained.
+In the first row we see that the model still generates blobs for buildings,
+especially in-between curvy blocks. The second row demonstrates visual
+artifacts that make the model often easy to spot by human eyes: the white
+banding in the green park area, and the color mixtures around the long vertical
+grey lines.
+
+<br />
+
+![task 2 failures](img/task2-problems.png)
+
+_Figure TODO: Task 2, two problems the model has even after training._
+
+<br />
+
+#### Unpredictable Sparsity
+
+Some of the most frequent failures cases for the model were arguably not due to
+shortcomings of the model itself, but the unpredictability of the task. Figure
+TODO shows the sparsity / density issue happening in both directions. Some road
+networks, though seemingly regular and residential, in fact have no buildings
+in them, and so the model guesses completely wrong (first row). On the other
+hand, other road networks that appear to possibly be barren industrial areas
+near a highway are actually densely lined, and the model guesses the wrong way
+by leaving them empty (bottom row).
+
+<br />
+
+![task 2 sparsity](img/task2-sparsity.png)
+
+_Figure TODO: Task 2, sparsity (or density) that is difficult to predict._
+
+<br />
+
+It may be worth taking a careful pass over several more samples of the dataset
+to ensure that the above sparse blocks are truly empty. One possibility is that
+there are other geographic landmarks (such as military areas, cemetaries, or
+railroad tracks) that would either explain the emptiness, or provide clues for
+the model to better determine when it should leave regions unoccupied.
 
 ## Conclusion
 
@@ -514,9 +615,11 @@ parks and waterways, and finer grained feature rendering would allow us to
 differentiate more _waypoint_ types, such as freeways, arterials, and side
 streets. Modifying the model to account for task-specific constraints—such as
 that buildings have straight edges and are closed polygons—would produce even
-more realistic results. And of course, the current approach provides the road
-network as input; an even greater challenge would be to generate the roads as
-well (though this would likely move beyond the limits of the current model).
+more realistic results. Training on multiple cities and observing the style
+differences the model picks up would be an interesting application of the work
+already done. And, of course, the current approach provides the road network as
+input; an even greater challenge would be to generate the roads as well (though
+this would likely move beyond the limits of the current model).
 
 Even more exciting to us is the second line of future work, which is to learn
 models inspired by traditional approaches to procedural map generation:
