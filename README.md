@@ -1,5 +1,10 @@
 # mapgen
-wip graphics prj
+
+Procedural map generation with GANs.
+
+![demo](report/img/task2-successes.png)
+
+Code is in `src/`, I've rendered the `report/` for easier reading [on my website](https://maxwellforbes.com/posts/procedural-map-generation-with-gans).
 
 ## relwork
 
